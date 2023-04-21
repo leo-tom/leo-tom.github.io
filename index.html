@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
+        <script>
+            function cleanStr(str){
+                arr = str.split("\n");
+                const regex = /^\d*/g
+                for(i = 0;i < arr.length;i++){
+                    arr[i] = arr[i].replace(regex, " ");
+                }
+                return arr.join('\n');
+            }
+            function clicked(){
+                document.getElementById("outBox").value = js_beautify(cleanStr(document.getElementById("textBox").value));
+            }
+        </script>
+    </head>
+    <body>
+        <textarea name="textBox" id="textBox" cols="80" rows="40" placeholder="//write code here" onkeyup="clicked();"></textarea>
+        <textarea name="outBox" id="outBox" cols="80" rows="40" readonly></textarea>
+    </body>
+</html>
