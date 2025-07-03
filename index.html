@@ -1,23 +1,77 @@
-<!DOCTYPE html>
 <html>
-    <head>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
-        <script>
-            function cleanStr(str){
-                arr = str.split("\n");
-                const regex = /^\d*/g
-                for(i = 0;i < arr.length;i++){
-                    arr[i] = arr[i].replace(regex, " ");
-                }
-                return arr.join('\n');
+<head>
+    <title>戸村電鉄</title>
+    <script>
+        var BALANCE = 500;
+        function pay(balance,fare,joshaEki){
+            var mainDiv = document.getElementById('mainDiv');
+            mainDiv.innerHTML = "乗車駅は" + joshaEki + "で料金は" + fare + "円です。<br>";
+            mainDiv.innerHTML += "チャージ残高は" + balance + "円です<br>";
+            if(balance < fare){
+                mainDiv.innerHTML += "残高不足です。<br>"
             }
-            function clicked(){
-                document.getElementById("outBox").value = js_beautify(cleanStr(document.getElementById("textBox").value));
+            while(balance < fare){
+                mainDiv.innerHTML += "3000円チャージします。<br>"
+                balance += 3000;
             }
-        </script>
-    </head>
+            balance -= fare;
+            mainDiv.innerHTML += "清算後のチャージ残高は" + balance + "円です。<br>";
+            if(balance < 500){
+                mainDiv.innerHTML += "残高が500円以下なので3000円自動チャージします<br>";
+                balance += 3000;
+                mainDiv.innerHTML += "チャージ残高は" + balance + "円です。<br>";
+            }
+            return balance
+        }
+        function fromAkiba(){
+            BALANCE = pay(BALANCE,133,"秋葉原");
+        }
+        function fromYamanashi(){
+            BALANCE = pay(BALANCE,4128,"山梨");
+        }
+        function fromNagano(){
+            BALANCE = pay(BALANCE,7990,"長野");
+        }
+        function select_station(){
+            const INNER_HTML_AKIBA = "<button type=\"button\" id=\"btnAkiba\" onclick=\"fromAkiba()\">秋葉原</button> から133円<br>"
+            const INNER_HTML_YAMANASHI = "<button type=\"button\" id=\"btnYamanashi\" onclick=\"fromYamanashi()\">山梨</button> から4128円<br>"
+            const INNER_HTML_Nagano = "<button type=\"button\" id=\"btnNagano\"  onclick=\"fromNagano()\">長野</button> から7990円<br>"
+            var mainDiv = document.getElementById('mainDiv');
+            mainDiv.innerHTML = INNER_HTML_AKIBA;
+            mainDiv.innerHTML += INNER_HTML_YAMANASHI;
+            mainDiv.innerHTML += INNER_HTML_Nagano;
+
+        }
+        function increaseBalance(value){
+            BALANCE += value;
+            var mainDiv = document.getElementById('mainDiv');
+            mainDiv.innerHTML +=  value + "円チャージします。<br>";
+            mainDiv.innerHTML += "チャージ残高は" +  BALANCE + "円です。<br>";
+        }
+        function charge(){
+            var mainDiv = document.getElementById('mainDiv');
+            mainDiv.innerHTML = "チャージ残高は" + BALANCE + "です。<br>";
+            for(amount = 1000;amount <= 10000;amount+=1000){
+                const appendingHTML = "<button type=\"button\" onclick=\"increaseBalance(" + amount + ");\">" + amount + "円</button><br>"
+                mainDiv.innerHTML += appendingHTML;
+            }
+        }
+        function menu(){
+            const INNER_HTML_MAIN = "<button type=\"button\" id=\"btnJosha\" onclick=\"select_station();\">乗車駅選択</button><button type=\"button\" id=\"btnCharge\" onclick=\"charge();\">チャージ機能</button>";
+            document.getElementById('mainDiv').innerHTML = INNER_HTML_MAIN;
+        }
+        window.onload = menu;
+    </script>
+
+</head>
     <body>
-        <textarea name="textBox" id="textBox" cols="80" rows="40" placeholder="//Copy your code here" onkeyup="clicked();"></textarea>
-        <textarea name="outBox" id="outBox" cols="80" rows="40" readonly></textarea>
+        <center>
+       <div id="mainDiv">
+
+       </div>
+        </center>
+        <button onclick="menu();"> メニューに戻る </button>
+       
     </body>
+
 </html>
