@@ -1,77 +1,275 @@
 <html>
 <head>
-    <title>戸村電鉄</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino & Bar Mackerel</title>
+    <style>
+        @media screen and (max-width: 600px) {
+            body {
+                background-color: #103019;
+                font-family: serif;
+                text-align: center;
+                margin: 0;
+                padding: 20px;
+            }
+            .colorKyocho {
+                color: #FFD700 !important; /* 金色 */
+            }
+            .fontSizeSmall {
+                font-size: 0.3em;opacity:0.9;color: white;
+            }
+            .fontSizeMedium {
+                font-size: 0.5em;opacity:0.9;color: white;
+            }
+            .fontSizeLarge {
+                font-size: 1em;opacity:0.9;color: white;
+            }
+            .imgContainer {
+            position: relative;
+            }
+            .textOverlay {
+                position: absolute;
+                top: 20%;
+                color: white;
+                text-align: center;
+                width: 100%;
+            }
+            .textOverlayRight {
+                position: absolute;
+                top: 5%;
+                right: 5%;
+                color: white;
+                text-align: right;
+                width: 100%;
+            }
+            .textOverlayLeft {
+                position: absolute;
+                top: 5%;
+                left: 5%;
+                color: white;
+                text-align: left;
+                width: 100%;
+            }
+            .fadeUp {
+                opacity: 0;
+                transform: translateY(50px);
+                transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+            }
+            .fadeUp.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .hidden {
+                opacity: 0;
+            }
+            img {
+                width: 100%;
+                height: auto;
+                opacity: 0.8;
+            }
+        }
+        @media screen and (min-width:601px){
+            body {
+                background-color: #103019;
+                font-family: serif;
+                text-align: center;
+                margin: 0;
+                padding: 20px;
+            }
+            .colorKyocho {
+                color: #FFD700 !important; /* 金色 */
+            }
+            .fontSizeSmall {
+                font-size: 1em;opacity:0.9;color: white;
+            }
+            .fontSizeMedium {
+                font-size: 2em;opacity:0.9;color: white;
+            }
+            .fontSizeLarge {
+                font-size: 4em;opacity:0.9;color: white;
+            }
+            .imgContainer {
+            position: relative;
+            }
+            .textOverlay {
+                position: absolute;
+                top: 20%;
+                color: white;
+                text-align: center;
+                width: 100%;
+            }
+            .textOverlayRight {
+                position: absolute;
+                top: 5%;
+                right: 5%;
+                color: white;
+                text-align: right;
+                width: 100%;
+            }
+            .textOverlayLeft {
+                position: absolute;
+                top: 5%;
+                left: 5%;
+                color: white;
+                text-align: left;
+                width: 100%;
+            }
+            .fadeUp {
+                opacity: 0;
+                transform: translateY(50px);
+                transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+            }
+            .fadeUp.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .hidden {
+                opacity: 0;
+            }
+            img {
+                width: 100%;
+                height: auto;
+                opacity: 0.8;
+            }
+            
+        }
+        
+    </style>
     <script>
-        var BALANCE = 500;
-        function pay(balance,fare,joshaEki){
-            var mainDiv = document.getElementById('mainDiv');
-            mainDiv.innerHTML = "乗車駅は" + joshaEki + "で料金は" + fare + "円です。<br>";
-            mainDiv.innerHTML += "チャージ残高は" + balance + "円です<br>";
-            if(balance < fare){
-                mainDiv.innerHTML += "残高不足です。<br>"
-            }
-            while(balance < fare){
-                mainDiv.innerHTML += "3000円チャージします。<br>"
-                balance += 3000;
-            }
-            balance -= fare;
-            mainDiv.innerHTML += "清算後のチャージ残高は" + balance + "円です。<br>";
-            if(balance < 500){
-                mainDiv.innerHTML += "残高が500円以下なので3000円自動チャージします<br>";
-                balance += 3000;
-                mainDiv.innerHTML += "チャージ残高は" + balance + "円です。<br>";
-            }
-            return balance
-        }
-        function fromAkiba(){
-            BALANCE = pay(BALANCE,133,"秋葉原");
-        }
-        function fromYamanashi(){
-            BALANCE = pay(BALANCE,4128,"山梨");
-        }
-        function fromNagano(){
-            BALANCE = pay(BALANCE,7990,"長野");
-        }
-        function select_station(){
-            const INNER_HTML_AKIBA = "<button type=\"button\" id=\"btnAkiba\" onclick=\"fromAkiba()\">秋葉原</button> から133円<br>"
-            const INNER_HTML_YAMANASHI = "<button type=\"button\" id=\"btnYamanashi\" onclick=\"fromYamanashi()\">山梨</button> から4128円<br>"
-            const INNER_HTML_Nagano = "<button type=\"button\" id=\"btnNagano\"  onclick=\"fromNagano()\">長野</button> から7990円<br>"
-            var mainDiv = document.getElementById('mainDiv');
-            mainDiv.innerHTML = INNER_HTML_AKIBA;
-            mainDiv.innerHTML += INNER_HTML_YAMANASHI;
-            mainDiv.innerHTML += INNER_HTML_Nagano;
-
-        }
-        function increaseBalance(value){
-            BALANCE += value;
-            var mainDiv = document.getElementById('mainDiv');
-            mainDiv.innerHTML +=  value + "円チャージします。<br>";
-            mainDiv.innerHTML += "チャージ残高は" +  BALANCE + "円です。<br>";
-        }
-        function charge(){
-            var mainDiv = document.getElementById('mainDiv');
-            mainDiv.innerHTML = "チャージ残高は" + BALANCE + "です。<br>";
-            for(amount = 1000;amount <= 10000;amount+=1000){
-                const appendingHTML = "<button type=\"button\" onclick=\"increaseBalance(" + amount + ");\">" + amount + "円</button><br>"
-                mainDiv.innerHTML += appendingHTML;
-            }
-        }
-        function menu(){
-            const INNER_HTML_MAIN = "<button type=\"button\" id=\"btnJosha\" onclick=\"select_station();\">乗車駅選択</button><button type=\"button\" id=\"btnCharge\" onclick=\"charge();\">チャージ機能</button>";
-            document.getElementById('mainDiv').innerHTML = INNER_HTML_MAIN;
-        }
-        window.onload = menu;
+        document.addEventListener("DOMContentLoaded", function() {
+            const imgs = document.querySelectorAll('.fadeUp');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        entry.target.classList.remove('hidden');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+            imgs.forEach(img => observer.observe(img));
+        });
     </script>
-
 </head>
-    <body>
-        <center>
-       <div id="mainDiv">
+<body>
+    <div class="imgContainer">
+        <img src="back.jpg" alt="Casino & Bar Mackerel" width="">
+        <div class="textOverlay">
+        <img class="fadeUp" src="casinoBar.png" alt="Casino & Bar Mackerel Logo" style="width:100%;">
+        </div>
+    </div>  
+    <div class="fadeUp hidden">
+        <p class="fontSizeLarge">第７６回　津田沼祭―由縁―</p>
+        <p class="fontSizeLarge">１０：００〜１８：００</p>
+        <p class="fontSizeLarge">１１月２２日（土）〜１１月２４日（月）</p>
+        <p class="fontSizeMedium">千葉工業大学　津田沼キャンパス　JR津田沼駅から徒歩２分</p>
+        <p class="fontSizeSmall">〒275-0016 千葉県習志野市津田沼2-17-1</p>
+    </div>
 
-       </div>
-        </center>
-        <button onclick="menu();"> メニューに戻る </button>
-       
-    </body>
+    <div class="imgContainer fadeUp hidden">
+        <br>
+        <p class="fontSizeMedium colorKyocho">このページを提示していただいた方には100チップをプレゼント致します</p>
+        <div class="fontSizeSmall">＊通常のプレイ料金（500円）をお支払いいただいたお客様に限ります</div>
+    </div>
 
+    <div class="imgContainer fadeUp hidden">
+        <img src="Maxwell.png" alt="Maxwell" width=""><img>
+        <div class="textOverlayRight">
+            <p class="fontSizeLarge">確率の専門家が提供するカジノ体験</p>
+            <p class="fontSizeMedium">
+                私達の生活は、確率に満ちています。天気予報やAI、<br>
+                私達が日々研究するディジタル通信も、確率論に基づいています。<br>
+                確率という概念の面白さを皆さんと共有したい、<br>
+                そんな思いで、私達はカジノMackerel（マカレル）を出店します。<br>
+                当模擬店では、ブラックジャックとバカラを楽しむことができます。<br>
+                ぜひお立ち寄りください。
+            </p>
+        </div>
+    </div>
+
+    <div class="imgContainer fadeUp hidden">
+        <img src="Bar.png" alt="bar" width=""><img>
+        <div class="textOverlayLeft">
+            <p class="fontSizeLarge">Bar & Cafe</p>
+            <p class="fontSizeMedium">
+                Mackerelでは、オリジナルカクテルと<br>
+                コーヒーを提供致します                
+            </p>
+            <p class="fontSizeMedium">
+                オリジナルカクテルは、<br>
+                世界中の有名カクテルを参考にした、<br>
+                至高のものをご用意致します<br>
+                厳選した豆を使用したコーヒーは、<br>
+                マキネッタという特殊な機器を使用し<br>
+                味わいを引き出します。<br>
+                研究に欠かせないコーヒー、私達のこだわりの一杯です。<br>
+                ぜひお試しください。
+            </p>
+            <p class="fontSizeSmall"> 
+                ＊当模擬店では、アルコール類の提供は致しません。
+            </p>
+        </div>
+    </div>
+
+    <div class="imgContainer fadeUp hidden">
+        <img src="system.png" alt="system" width=""><img>
+        <div class="textOverlayRight">
+            <p class="fontSizeLarge">システム</p>
+            <p class="fontSizeMedium">
+                プレイ料金は500円です。<br>
+                1プレイにつき、500チップをお渡しします。<br>
+                ブラックジャックとバカラを<br>
+                お楽しみいただけます。<br>
+                チップは、豪華景品と交換できます。<br>
+                入場は無料ですので、<br>
+                ご気楽にご来店ください。<br>
+            </p>
+            <p class="fontSizeSmall">＊1プレイにつき、プレイ時間は40分とさせていただきます</p>
+        </div>
+    </div>
+
+    <div class="fadeUp hidden">
+        <div class="textOverlayLeft">
+            <p class="fontSizeLarge">Q & A</p>
+            <p class="fontSizeMedium">
+                Q. 未成年でも入店できますか？<br>
+                A. はい、未成年の方でもご入店いただけます。
+            </p>
+            <p class="fontSizeMedium">
+                Q. 初心者なのですが、ルールを教えてもらえますか？<br>
+                A. ご来場いただいた際に、スタッフがルールを説明いたします。初心者大歓迎です。
+            </p>
+            <p class="fontSizeMedium">
+                Q. 予約は必要ですか？<br>
+                A. 必要ございません。ただし、混雑時には入場を制限させていただく場合がございます。ご了承ください。
+            </p>
+            <p class="fontSizeMedium">
+                Q. アクセス方法（JR津田沼駅からの行き方）は？<br>
+                A. 津田沼キャンパスへのアクセス方法は、<a href="https://chibatech.jp/about/institute/access/tsudanuma.html" target="_blank">こちら</a>をご参照ください。<br>
+            </p>
+            <p class="fontSizeMedium">
+                Q. チップとはなんですか？どうやって使いますか？<br>
+                A. チップは、ゲームをプレイするために使用します。<br>
+                払うチップの量に応じて、勝ったときに得られるチップの量が変わります。<br>
+                ただし、負けてしまった場合、チップは戻ってきません。<br><br>
+                また、集めたチップは豪華景品と交換できます。<br>
+                ご来場いただいた際に、スタッフが詳しく説明いたします。
+            </p>
+            <p class="fontSizeMedium">
+                Q. この模擬店は、誰が運営しているんですか？<br>
+                A. 千葉工業大学、情報科学科に在籍する学生が運営しています。
+            </p>
+            <p class="fontSizeMedium">
+                Q. カジノって、日本では違法じゃないんですか？<br>
+                A. 当模擬店は、刑法第185条（賭博）および第186条（賭博場開張等図利）には該当しません。<br>
+                当模擬店に違法性はございませんので、ご安心ください。
+            </p>
+            <p class="fontSizeMedium">
+                Q. スタッフがイケメンでカッコいい！連絡先を教えてくれますか？<br>
+                A. 当模擬店のスタッフがイケメンですが、スタッフの個人情報の提供は致しかねます。ご了承ください。
+            </p>
+        </div>
+        <br>
+        
+
+</body>
 </html>
