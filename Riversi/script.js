@@ -393,7 +393,7 @@ function frameUpdate(){
             ITERATE_AI = false;
             for(let i = 0;i < AI_LIST.length; i++){
                 let item = AI_LIST[i];
-                if(item[5] < 2*DIFFICULTY){
+                if(item[5] < 4*DIFFICULTY){
                     allFinished = false;
                     setTimeout(() => {
                         const r = item[0];
@@ -401,7 +401,7 @@ function frameUpdate(){
                         const opp_list = item[2];
                         const board = item[3];
                         const score = item[4];
-                        const TRIAL_N=DIFFICULTY/4;
+                        const TRIAL_N=DIFFICULTY/2;
                         for(let n = 0;n < TRIAL_N; n++){
                             if(opp_list.length === 0) break;
                             const tuple = opp_list[Brain.rouletteSelect(opp_list)];
