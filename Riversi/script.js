@@ -1,4 +1,4 @@
-const DIFFICULTY = 150;
+const DIFFICULTY = 200;
 //const DIFFICULTY = 20;
 
 const VOICE_ID_WIN = ["win01","win02","win03"];
