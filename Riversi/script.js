@@ -401,15 +401,16 @@ function frameUpdate(){
                         const opp_list = item[2];
                         const board = item[3];
                         const score = item[4];
-                        for(let n = 0;n < DIFFICULTY/4; n++){
+                        const TRIAL_N=DIFFICULTY/4;
+                        for(let n = 0;n < TRIAL_N; n++){
                             if(opp_list.length === 0) break;
-                            const tuple = opp_list[Brain.randomSelect(opp_list)];
+                            const tuple = opp_list[Brain.rouletteSelect(opp_list)];
                             const r2 = tuple[0];
                             const c2 = tuple[1];
                             const prob = tuple[2];
-                            item[4] -= prob*Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2);
+                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2);
                         }
-                        item[5] += 10;
+                        item[5] += TRIAL_N;
                         AI_LIST[i] = item;
                         ITERATE_AI = true;
                     }, 10);
