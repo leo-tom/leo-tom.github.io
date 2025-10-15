@@ -345,9 +345,9 @@ function renderInsideInfo(){
     var leftText = document.getElementById("leftText");
     var rightText = document.getElementById("rightText");
     leftText.innerText = PLAYER_CHAR === '*' ? "あなた" : "わたし";
-    leftText.style.color = PLAYER_CHAR === '*' ? "rgb(0, 44, 165)" : "rgb(207, 80, 80)";
+    leftText.style.color = PLAYER_CHAR === '*' ? "gray" : "black";
     rightText.innerText = PLAYER_CHAR === '*' ? "わたし" : "あなた";
-    rightText.style.color = PLAYER_CHAR === '*' ? "rgb(207, 80, 80)" : "rgb(0, 44, 165)";
+    rightText.style.color = PLAYER_CHAR === '*' ? "black" : "gray";
 }
 
 function insertFace(face = "normal"){
@@ -520,6 +520,7 @@ function playerInput(event) {
         }
         if(currentBoard.isPuttable(AI_CHAR)){
             AI_THINKING = true;
+            insertFace("thinking");
             Brain.think(currentBoard, AI_CHAR);
             
         }else{
