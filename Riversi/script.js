@@ -227,6 +227,9 @@ function updateBoard(_instance = new Board()) {
     const board = document.getElementById("board");
     board.innerHTML = '';
     let red_weight = Array(8).fill(null).map(() => Array(8).fill(0));
+    if(document.getElementById("bgm").paused){
+        document.getElementById("bgm").play();
+    }
     if(_instance.renderColor === "red"){
         // weighted positions for red rendering
         // higher the value of _instance.render[r][c], redder the text
@@ -328,9 +331,29 @@ function drawCircleAt(r,c, color="yellow",opacity=0.5){
     return circle;
 }
 
+function renderInsideInfo(){
+    const faceEle = document.getElementById("face");
+    var ele = document.getElementById("info");
+    var progressBar = document.getElementById("progressBar");
+    ele.style.position = "absolute";
+    ele.style.width = faceEle.width + "px";
+    ele.style.top = (faceEle.offsetTop + faceEle.height + 10) + "px";
+    ele.style.right = faceEle.style.right;
+    progressBar.style.width = (faceEle.width - 20) + "px";
+    progressBar.value = RATE;
+    progressBar.max = 1.0;
+    var leftText = document.getElementById("leftText");
+    var rightText = document.getElementById("rightText");
+    leftText.innerText = PLAYER_CHAR === '*' ? "あなた" : "わたし";
+    leftText.style.color = PLAYER_CHAR === '*' ? "rgb(0, 44, 165)" : "rgb(207, 80, 80)";
+    rightText.innerText = PLAYER_CHAR === '*' ? "わたし" : "あなた";
+    rightText.style.color = PLAYER_CHAR === '*' ? "rgb(207, 80, 80)" : "rgb(0, 44, 165)";
+}
+
 function insertFace(face = "normal"){
     const img = document.getElementById("face");
     img.src = `face/${face}.jpg`;
+    renderInsideInfo();
 }
 
 function playSound(id){
@@ -352,6 +375,8 @@ let ITERATE_AI = false;
 
 let AI_CHAR = '*';
 let PLAYER_CHAR = 'o';
+
+let RATE = 0.5;
 
 let CALL_ENDGAME = false;
 
@@ -399,6 +424,10 @@ function frameUpdate(){
                 console.log(AI_LIST);
                 r_c_score_list = AI_LIST.map(x => [x[0], x[1], x[4]/(x[5] || 1)]);
                 r_c_score_list.sort((a, b) => b[2] - a[2]);
+                RATE = r_c_score_list.filter(x => x[2] > 0).length / r_c_score_list.length;
+                if(AI_CHAR === 'o'){
+                    RATE = 1.0 - RATE;
+                }
                 const [r, c, score] = r_c_score_list[0];
                 console.log(score);
                 currentBoard.put(r, c, AI_CHAR);
@@ -527,6 +556,7 @@ window.onload = function() {
     board.addEventListener("click", playerInput);
     setInterval(frameUpdate, 100);
     document.getElementById("bgm").volume = 0.3;
+    renderInsideInfo();
 };
 
 window.onresize = function() {

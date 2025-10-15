@@ -17,22 +17,55 @@
             left: 10%;
             width: 50%;
         }
+        .topBtn {
+            background-color: #b95966;
+            border: none;
+            color: white;
+            width: 20%; 
+            height: auto; 
+            font-size: 24px; 
+            margin-top: 20px;"
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+        progress {
+            -webkit-appearance: none;
+            height: 20px;
+        }
+        progress::-webkit-progress-bar {
+            background-color: #fff;
+        }
+
+        /* 進捗部分を黒 */
+        progress::-webkit-progress-value {
+            background-color: #000;
+        }
+
+        /* Firefox用 */
+        progress::-moz-progress-bar {
+            background-color: #000;
+        }
     </style>
     <script src="script.js">       
     </script>
 <body>
     <center id="main">
-    <button onclick="startGame('o');" style="width: 20%; height: auto; font-size: 24px; margin-top: 20px;">先手で始める</button>
-    <button onclick="startGame('*');" style="width: 20%; height: auto; font-size: 24px; margin-top: 20px;">後手で始める</button>
+    <button onclick="startGame('o');" class="topBtn">先手で始める</button>
+    <button onclick="startGame('*');" class="topBtn">後手で始める</button>
     
     <div id="board" click="playerInput();">
         
     </div>
     <img id="face" src="face/normal.jpg" style="position: absolute; right: 5%;top: 80px; width: 30%;">
-    <div>
-        <br>
+    <div id="info">
+        <progress id="progressBar"></progress>
+        <div id="leftText" style="position: relative; font-size: 24px; float: left; color: rgb(207, 80, 80);">わたし</div>
+        <div id="rightText" style="position: relative; font-size: 24px; float: right; color: rgb(0, 44, 165);">あなた</div>
     </div>    
-</center>
+    </center>
     <audio id="bgm" src="bgm.mp3" autoplay loop></audio>
     <audio id="kako" src="kako.mp3"></audio>
     <audio id="pon" src="pon.mp3"></audio>
