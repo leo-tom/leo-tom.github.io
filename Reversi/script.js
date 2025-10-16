@@ -62,6 +62,42 @@ class Board{
         }
         return total_flip;
     }
+    calculateKaihoudo(r,c,player){
+        if(this.cells[r][c] !== ' ') return false;
+        const opponent = player === 'o' ? '*' : 'o';
+        let kaihoDo = 0;
+        const directions = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1],          [0, 1],
+            [1, -1], [1, 0], [1, 1]
+        ];
+        for(const [dr, dc] of directions){
+            let nr = r + dr;
+            let nc = c + dc;
+            let toFlip = [];
+            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === opponent){
+                toFlip.push([nr, nc]);
+                nr += dr;
+                nc += dc;
+            }
+            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === player && toFlip.length > 0){
+                for(const [fr, fc] of toFlip){
+                    for (const [adr, adc] of directions) {
+                        const ar = fr + adr;
+                        const ac = fc + adc;
+                        if (
+                            ar >= 0 && ar < 8 &&
+                            ac >= 0 && ac < 8 &&
+                            this.cells[ar][ac] === ' '
+                        ) {
+                            kaihoDo++;
+                        }
+                    }
+                }
+            }
+        }
+        return kaihoDo;
+    }
     isPuttable(player){
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
@@ -153,6 +189,11 @@ class Brain{
         return -1;
     }
 
+    static kaihoudoSelect(board,list,player){
+        let kaihodoList = list.map(x => -board.calculateKaihoudo(x[0],x[1],player));
+        return rouletteSelect(normalizeList(kaihodoList));
+    }
+
     static randomSelect(list){
         const cindex = Brain.Corner(list);
         if(cindex >= 0){
@@ -177,13 +218,13 @@ class Brain{
         if(list.length === 0){
             // Opponent has no moves
             let list2 = Brain.getList(board, player);
-            let index = Brain.randomSelect(list2);
+            let index = Math.random() < 0.4 ? Brain.kaihodoSelect(board,list,player) : Brain.randomSelect(list2);
             r = list2[index][0];
             c = list2[index][1];
             return this.__think(board, player, r, c);
         }
 
-        let index = Brain.randomSelect(list);
+        let index = Math.random() < 0.4 ? Brain.kaihodoSelect(board,list,opponent) : Brain.randomSelect(list);
         r = list[index][0];
         c = list[index][1];
         return -this.__think(board, opponent, r, c);
