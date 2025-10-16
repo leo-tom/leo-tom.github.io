@@ -151,7 +151,7 @@ class Brain{
         if(board.isGameOver()){
             const myCount = board.countPieces(player);
             const oppCount = board.countPieces(player === 'o' ? '*' : 'o');
-            return (myCount - oppCount)/64;
+            return (myCount - oppCount) < 0 ? -1 : 1;
         }
         const opponent = player === 'o' ? '*' : 'o';
         let list = Brain.getList(board, opponent);
@@ -174,7 +174,7 @@ class Brain{
         let list = Brain.getList(board, player);
         for(let index=0; index<list.length; index++){
             let [r, c, score] = list[index];
-            for(let _=0; _<DIFFICULTY/2; _++){
+            for(let _=0; _<DIFFICULTY; _++){
                 score += this.__think(board.duplicate(), player, r, c);
             }
             list[index] = [r, c, score];
