@@ -142,7 +142,7 @@ class Brain{
     }
 
     static Corner(list){
-        for(let index in range(list.length)){
+        for(let index = 0;index< list.length;index++){
             let r = list[index][0];
             let c = list[index][1];
             if(r === 0 && c === 0){return index;}
