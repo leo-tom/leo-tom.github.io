@@ -263,6 +263,7 @@ class Brain{
         if (number_of_pieces == 4){
             AI_LIST = [ [4,5,[],null,420,10*DIFFICULTY] ];
             ITERATE_AI = true;
+            AI_LIST_SIZE = 1;
             return;
         }
         const _number_of_pieces = number_of_pieces - 4;
@@ -540,21 +541,23 @@ function frameUpdate(){
                     currentBoard.setList(Brain.getList(currentBoard, AI_CHAR), AI_CHAR, true);
                     return;
                 }
-                if(score >= 0.5){
-                    insertFace("laugh");
-                    playVoice(VOICE_ID_PUT_LAUGHING);
-                } else if(score < -1.0){
-                    insertFace("cry");
-                    playVoice(VOICE_ID_PUT_CRYING);
-                } else if(score > 1.0){
-                    insertFace("smile");
-                    playVoice(VOICE_ID_PUT_WINNING);
-                } else if(score < -0.0){
-                    insertFace("confused");
-                    playVoice(VOICE_ID_PUT_LOSING);
-                } else {
-                    insertFace("normal");
-                    playVoice(VOICE_ID_PUT_NORMAL);
+                if(board.countPieces(player) + board.countPieces(player_opponent) > 5){
+                    if(score >= 0.5){
+                        insertFace("laugh");
+                        playVoice(VOICE_ID_PUT_LAUGHING);
+                    } else if(score < -0.5){
+                        insertFace("cry");
+                        playVoice(VOICE_ID_PUT_CRYING);
+                    } else if(score > 1.0){
+                        insertFace("smile");
+                        playVoice(VOICE_ID_PUT_WINNING);
+                    } else if(score < -0.0){
+                        insertFace("confused");
+                        playVoice(VOICE_ID_PUT_LOSING);
+                    } else {
+                        insertFace("normal");
+                        playVoice(VOICE_ID_PUT_NORMAL);
+                    }
                 }
                 currentBoard = updateBoard(currentBoard);
                 drawCircleAt(r, c, "red", 0.5);
