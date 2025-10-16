@@ -261,7 +261,7 @@ function updateBoard(_instance = new Board()) {
         }
     }
     const WINDOW_WIDTH = window.innerWidth;
-    const CELL_SIZE = Math.floor(WINDOW_WIDTH * 0.45 / 8);
+    const CELL_SIZE = Math.floor(WINDOW_WIDTH * 0.50 / 8);
     const BOARD_WIDTH = CELL_SIZE * 8;
     const CELL_SIZE_STR = `${CELL_SIZE}px`;
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
@@ -523,7 +523,7 @@ function gameEnded(){
 function playerInput(event) {
     const board = document.getElementById("board");
     const rect = board.getBoundingClientRect();
-    const CELL_SIZE = Math.floor(window.innerWidth * 0.45 / 8);
+    const CELL_SIZE = Math.floor(window.innerWidth * 0.50 / 8);
     console.log(CELL_SIZE);
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
