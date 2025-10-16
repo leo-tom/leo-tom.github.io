@@ -218,13 +218,13 @@ class Brain{
         if(list.length === 0){
             // Opponent has no moves
             let list2 = Brain.getList(board, player);
-            let index = Math.random() < 0.4 ? Brain.kaihodoSelect(board,list,player) : Brain.randomSelect(list2);
+            let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list,player) : Brain.randomSelect(list2);
             r = list2[index][0];
             c = list2[index][1];
             return this.__think(board, player, r, c);
         }
 
-        let index = Math.random() < 0.4 ? Brain.kaihodoSelect(board,list,opponent) : Brain.randomSelect(list);
+        let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list,opponent) : Brain.randomSelect(list);
         r = list[index][0];
         c = list[index][1];
         return -this.__think(board, opponent, r, c);
@@ -260,6 +260,11 @@ class Brain{
         AI_LIST = [];
         const player_opponent = player === 'o' ? '*' : 'o';
         const number_of_pieces = board.countPieces(player) + board.countPieces(player_opponent);
+        if (number_of_pieces == 4){
+            AI_LIST.append([4,5,[],null,420,10*DIFFICULTY);
+            ITERATE_AI = true;
+            return;
+        }
         const _number_of_pieces = number_of_pieces - 4;
         DIFFICULTY = Math.ceil(DIFFICULTY_CONST * 1.0/(1.0 + Math.exp(-_number_of_pieces*_number_of_pieces/16)));
         console.log(`AI is thinking... Difficulty: ${DIFFICULTY}, Pieces on board: ${number_of_pieces}`);
