@@ -141,7 +141,26 @@ class Brain{
         return -1; // Should not reach here
     }
 
+    static Corner(list){
+        for(let index in range(list.length)){
+            let r = list[index][0];
+            let c = list[index][1];
+            if(r === 0 && c === 0){return index;}
+            else if(r === 0 && c=== 7){return index;}
+            else if(r === 7 && c=== 0){return index;}
+            else if(r === 7 && c=== 7){return index;}
+        }
+        return -1;
+    }
+
     static randomSelect(list){
+        const cindex = Corner(list);
+        if(cindex >= 0){
+            if(Math.random() < 0.9){
+                return cindex;
+            }
+        }
+                
         const size = list.length;
         const index = Math.floor(Math.random() * size);
         return index;
