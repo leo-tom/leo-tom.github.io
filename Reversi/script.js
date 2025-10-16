@@ -186,6 +186,11 @@ class Brain{
             let [r, c, score] = list[index];
             score += Brain.__think(board.duplicate(),player,r,c);
             list[index] = [r,c,score];
+            if (n % 64 == 0){
+                if(document.getElementById("bgm").paused){
+                    document.getElementById("bgm").play();
+                }
+            }
         }
         list.sort((a, b) => b[2] - a[2]);
         return Brain.normalizeList(list);
