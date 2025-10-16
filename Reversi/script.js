@@ -218,7 +218,7 @@ class Brain{
         if(list.length === 0){
             // Opponent has no moves
             let list2 = Brain.getList(board, player);
-            let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list,player) : Brain.randomSelect(list2);
+            let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list2,player) : Brain.randomSelect(list2);
             r = list2[index][0];
             c = list2[index][1];
             return this.__think(board, player, r, c);
