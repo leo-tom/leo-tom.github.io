@@ -261,7 +261,7 @@ function updateBoard(_instance = new Board()) {
         }
     }
     const WINDOW_WIDTH = window.innerWidth;
-    const CELL_SIZE = Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = Math.floor(WINDOW_WIDTH * 0.50 / 8 - 1);
     const BOARD_WIDTH = CELL_SIZE * 8;
     const CELL_SIZE_STR = `${CELL_SIZE}px`;
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
