@@ -191,7 +191,7 @@ class Brain{
 
     static kaihoudoSelect(board,list,player){
         let kaihodoList = list.map(x => -board.calculateKaihoudo(x[0],x[1],player));
-        return rouletteSelect(normalizeList(kaihodoList));
+        return Brain.rouletteSelect(Brain.normalizeList(kaihodoList));
     }
 
     static randomSelect(list){
