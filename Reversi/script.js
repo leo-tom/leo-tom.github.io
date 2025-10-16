@@ -261,7 +261,7 @@ class Brain{
         const player_opponent = player === 'o' ? '*' : 'o';
         const number_of_pieces = board.countPieces(player) + board.countPieces(player_opponent);
         if (number_of_pieces == 4){
-            AI_LIST.append([4,5,[],null,420,10*DIFFICULTY);
+            AI_LIST.append([4,5,[],null,420,10*DIFFICULTY]);
             ITERATE_AI = true;
             return;
         }
