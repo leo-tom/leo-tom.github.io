@@ -541,7 +541,7 @@ function frameUpdate(){
                     currentBoard.setList(Brain.getList(currentBoard, AI_CHAR), AI_CHAR, true);
                     return;
                 }
-                if(board.countPieces('*') + board.countPieces('o') > 5){
+                if(currentBoard.countPieces('*') + currentBoard.countPieces('o') > 5){
                     if(score >= 0.5){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
