@@ -154,7 +154,7 @@ class Brain{
     }
 
     static randomSelect(list){
-        const cindex = Corner(list);
+        const cindex = Brain.Corner(list);
         if(cindex >= 0){
             if(Math.random() < 0.9){
                 return cindex;
