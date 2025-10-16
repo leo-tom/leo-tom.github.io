@@ -180,7 +180,7 @@ class Brain{
             list[index] = [r, c, score];
         }
         list.sort((a, b) => b[2] - a[2]);
-        normalizedList=Brain.normalizeList(list);
+        let normalizedList=Brain.normalizeList(list);
         for(let n=0;n<DIFFICULTY;n++){
             let index = Brain.rouletteSelect(normalizedList);
             let [r, c, score] = list[index];
