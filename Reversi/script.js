@@ -190,7 +190,7 @@ class Brain{
     }
 
     static kaihoudoSelect(board,list,player){
-        let kaihodoList = list.map(x => -board.calculateKaihoudo(x[0],x[1],player));
+        let kaihodoList = list.map(x => [x[0],x[1],-board.calculateKaihoudo(x[0],x[1],player) ]);
         return Brain.rouletteSelect(Brain.normalizeList(kaihodoList));
     }
 
