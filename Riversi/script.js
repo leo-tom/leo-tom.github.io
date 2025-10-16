@@ -180,6 +180,14 @@ class Brain{
             list[index] = [r, c, score];
         }
         list.sort((a, b) => b[2] - a[2]);
+        normalizedList=Brain.normalizeList(list);
+        for(let n=0;n<DIFFICULTY;n++){
+            let index = this.rouletteSelect(normalizedList);
+            let [r, c, score] = list[index];
+            score += this.__think(board.duplicate(),player,r,c);
+            list[index] = [r,c,score];
+        }
+        list.sort((a, b) => b[2] - a[2]);
         return Brain.normalizeList(list);
     }
     static think(board, player){
