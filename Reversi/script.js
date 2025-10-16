@@ -475,13 +475,13 @@ function frameUpdate(){
                     currentBoard.setList(Brain.getList(currentBoard, AI_CHAR), AI_CHAR, true);
                     return;
                 }
-                if(score >= 0.05){
+                if(score >= 0.5){
                     insertFace("laugh");
                     playVoice(VOICE_ID_PUT_LAUGHING);
-                } else if(score < -0.1){
+                } else if(score < -1.0){
                     insertFace("cry");
                     playVoice(VOICE_ID_PUT_CRYING);
-                } else if(score > 0.1){
+                } else if(score > 1.0){
                     insertFace("smile");
                     playVoice(VOICE_ID_PUT_WINNING);
                 } else if(score < -0.0){
