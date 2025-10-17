@@ -378,7 +378,7 @@ function updateBoard(_instance = new Board()) {
         }
     }
     const WINDOW_WIDTH = window.innerWidth;
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     const BOARD_WIDTH = CELL_SIZE * 8;
     const CELL_SIZE_STR = `${CELL_SIZE}px`;
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
@@ -450,7 +450,7 @@ function drawCircleAt(r,c, color="yellow",opacity=0.5){
     const cell  = document.getElementById(`cell-${r}-${c}`);
     if(!cell) return;
     const circle = document.createElement("div");
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
     const CIRCLE_SIZE = Math.floor(KOMA_SIZE / 2);
     const CIRCLE_SIZE_STR = `${CIRCLE_SIZE}px`;
@@ -658,7 +658,7 @@ function playerInput(event) {
     const WINDOW_WIDTH = window.innerWidth;
     const board = document.getElementById("board");
     const rect = document.getElementById("cell-0-0").getBoundingClientRect();
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     console.log(CELL_SIZE);
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -719,7 +719,7 @@ window.onload = function() {
     renderInsideInfo();
     insertFace("normal");
     currentBoard = updateBoard(currentBoard);
-    document.getElementById("versionDiv").innerHTML = "Version 0.2<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
+    document.getElementById("versionDiv").innerHTML = "Version 0.3<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
 };
 
 window.onresize = function() {
