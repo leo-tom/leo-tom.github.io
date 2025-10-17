@@ -402,7 +402,8 @@ function updateBoard(_instance = new Board()) {
                 piece.style.height = KOMA_SIZE_STR;
                 piece.style.borderRadius = "50%";
                 piece.style.backgroundColor = "white";
-                piece.style.margin = "8px auto";
+                piece.style.margin = `${(CELL_SIZE - KOMA_SIZE) / 2}px`;
+
                 cell.appendChild(piece);
             } else if(_instance.cells[r][c] === '*') {
                 const piece = document.createElement("div");
@@ -410,7 +411,7 @@ function updateBoard(_instance = new Board()) {
                 piece.style.height = KOMA_SIZE_STR;
                 piece.style.borderRadius = "50%";
                 piece.style.backgroundColor = "black";
-                piece.style.margin = "8px auto";
+                piece.style.margin = `${(CELL_SIZE - KOMA_SIZE) / 2}px`;
                 cell.appendChild(piece);
             } else if(_instance.render && _instance.render[r][c] !== ""){
                 const text = document.createElement("div");
