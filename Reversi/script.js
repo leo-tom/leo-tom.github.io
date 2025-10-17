@@ -16,22 +16,29 @@ const VOICE_ID_THINKING = ["thinking01","thinking02","thinking03"];
 class Board{
     
     constructor(){
-        this.cells = Array(8).fill(null).map(() => Array(8).fill(' '));
-        this.cells[3][3] = 'o';
-        this.cells[4][4] = 'o';
-        this.cells[3][4] = '*';
-        this.cells[4][3] = '*';
+        this.cells = Array(8).fill(0);
+        this._put(3,3,'o');
+        this._put(4,4,'o');
+        this._put(3,4,'*');
+        this._put(4,3,'*');
     }
-    duplicate(){const newBoard = new Board();
-        for(let r=0; r<8; r++){
-            for(let c=0; c<8; c++){
-                newBoard.cells[r][c] = this.cells[r][c];
-            }
-        }
+    _put(r,c,player){
+        const bitSelf  = 1 << (player === '*' ? c : (c + 8));
+        const bitOther = 1 << (player === '*' ? (c + 8) : c);
+        this.cells[r] = (this.cells[r] & (~bitOther)) | bitSelf;
+    }
+    _get(r,c){
+        if((this.cells[r] & (1 << c)) !== 0) return '*';
+        if((this.cells[r] & (1 << (c + 8))) !== 0) return 'o';
+        return ' ';
+    }
+    duplicate(){
+        let newBoard = new Board();
+        newBoard.cells = this.cells.slice();
         return newBoard;
     }
     put(r,c,player,flip=true){
-        if(this.cells[r][c] !== ' ') return false;
+        if(this._get(r,c) !== ' ') return false;
         const opponent = player === 'o' ? '*' : 'o';
         let total_flip = 0;
         const directions = [
@@ -43,27 +50,27 @@ class Board{
             let nr = r + dr;
             let nc = c + dc;
             let toFlip = [];
-            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === opponent){
+            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === opponent){
                 toFlip.push([nr, nc]);
                 nr += dr;
                 nc += dc;
             }
-            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === player && toFlip.length > 0){
+            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === player && toFlip.length > 0){
                 total_flip += toFlip.length;
                 if(flip){
                     for(const [fr, fc] of toFlip){
-                        this.cells[fr][fc] = player;
+                        this._put(fr, fc, player);
                     }
                 }
             }
         }
         if(flip){
-            this.cells[r][c] = player;
+            this._put(r, c, player);
         }
         return total_flip;
     }
     calculateKaihoudo(r,c,player){
-        if(this.cells[r][c] !== ' ') return false;
+        if(this._get(r,c) !== ' ') return false;
         const opponent = player === 'o' ? '*' : 'o';
         let kaihoDo = 0;
         const directions = [
@@ -75,12 +82,12 @@ class Board{
             let nr = r + dr;
             let nc = c + dc;
             let toFlip = [];
-            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === opponent){
+            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === opponent){
                 toFlip.push([nr, nc]);
                 nr += dr;
                 nc += dc;
             }
-            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this.cells[nr][nc] === player && toFlip.length > 0){
+            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === player && toFlip.length > 0){
                 for(const [fr, fc] of toFlip){
                     for (const [adr, adc] of directions) {
                         const ar = fr + adr;
@@ -88,7 +95,7 @@ class Board{
                         if (
                             ar >= 0 && ar < 8 &&
                             ac >= 0 && ac < 8 &&
-                            this.cells[ar][ac] === ' '
+                            this._get(ar,ac) === ' '
                         ) {
                             kaihoDo++;
                         }
@@ -101,7 +108,7 @@ class Board{
     isPuttable(player){
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
-                if(this.cells[r][c] === ' '){
+                if(this._get(r,c) === ' '){
                     if(this.put(r,c,player,false)){
                         return true;
                     }
@@ -113,23 +120,11 @@ class Board{
     isGameOver(){
         return !this.isPuttable('o') && !this.isPuttable('*');
     }
-    isShuban(){
-        let FACTOR = 20; //less than 20 ' 's means shuban
-        for(let r=0; r<8; r++){
-            for(let c=0; c<8; c++){
-                if(this.cells[r][c] === ' '){
-                    FACTOR--;
-                    if(FACTOR <= 0) return false;
-                }
-            }
-        }
-        return true;
-    }
     countPieces(player){
         let count = 0;
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
-                if(this.cells[r][c] === player){
+                if(this._get(r,c) === player){
                     count++;
                 }
             }
@@ -166,7 +161,7 @@ class Brain{
         const list = [];
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
-                if(board.cells[r][c] === ' '){
+                if(board._get(r,c) === ' '){
                     if(board.put(r, c, player, false)){
                         list.push([r, c, 0]);
                     }
@@ -396,7 +391,7 @@ function updateBoard(_instance = new Board()) {
             cell.style.display = "inline-block";
             cell.style.verticalAlign = "top";
             cell.style.backgroundColor = (r + c) % 2 === 0 ? "#aad751" : "#a2d149";
-            if(_instance.cells[r][c] === 'o') {
+            if(_instance._get(r,c) === 'o') {
                 const piece = document.createElement("div");
                 piece.style.width = KOMA_SIZE_STR;
                 piece.style.height = KOMA_SIZE_STR;
@@ -405,7 +400,7 @@ function updateBoard(_instance = new Board()) {
                 piece.style.margin = `${(CELL_SIZE - KOMA_SIZE) / 2}px`;
 
                 cell.appendChild(piece);
-            } else if(_instance.cells[r][c] === '*') {
+            } else if(_instance._get(r,c) === '*') {
                 const piece = document.createElement("div");
                 piece.style.width = KOMA_SIZE_STR;
                 piece.style.height = KOMA_SIZE_STR;
@@ -531,8 +526,8 @@ let AI_LIST = [];
 let AI_LIST_SIZE = -1;
 let ITERATE_AI = false;
 
-let AI_CHAR = '*';
-let PLAYER_CHAR = 'o';
+let AI_CHAR = 'o';
+let PLAYER_CHAR = '*';
 
 let RATE = 0.5;
 
@@ -549,17 +544,18 @@ function frameUpdate(){
         allFinished = true;
         if(ITERATE_AI && AI_LIST.length == AI_LIST_SIZE){
             ITERATE_AI = false;
+            let average_score = AI_LIST.map(x => x[4]/(x[5] || 1)).reduce((a,b) => a + b, 0) / AI_LIST.length;
             for(let i = 0;i < AI_LIST.length; i++){
                 let item = AI_LIST[i];
-                if(item[5] < 4*DIFFICULTY){
+                if(item[5] < DIFFICULTY){
                     allFinished = false;
                     setTimeout(() => {
                         const r = item[0];
                         const c = item[1];
                         const opp_list = item[2];
                         const board = item[3];
-                        const score = item[4];
-                        const TRIAL_N=Math.ceil(DIFFICULTY/8);
+                        //const score = item[4];
+                        const TRIAL_N=Math.ceil(DIFFICULTY/4);
                         const spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
                         for(let n = 0;n < TRIAL_N; n++){
                             if(opp_list.length === 0) break;
@@ -573,6 +569,36 @@ function frameUpdate(){
                         AI_LIST[i] = item;
                         ITERATE_AI = true;
                     }, 10);
+                }else{
+                    let TRIAL_N=  Math.ceil(DIFFICULTY/8);
+                    const score = item[4]/(item[5] || 1);
+                    if(score >= average_score && item[5] < 8*DIFFICULTY){
+                        TRIAL_N = Math.ceil(DIFFICULTY/4);
+                        allFinished = false;
+                    }else if(score < average_score && item[5] < 2*DIFFICULTY){
+                        TRIAL_N = Math.ceil(DIFFICULTY/8);
+                        allFinished = false;
+                    }else{
+                        continue;
+                    }
+                    setTimeout(() => {
+                        const r = item[0];
+                        const c = item[1];
+                        const opp_list = item[2];
+                        const board = item[3];
+                        const spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
+                        for(let n = 0;n < TRIAL_N; n++){
+                            if(opp_list.length === 0) break;
+                            const tuple = opp_list[Brain.rouletteSelect(opp_list)];
+                            const r2 = tuple[0];
+                            const c2 = tuple[1];
+                            //const prob = tuple[2];
+                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2,spaces);
+                        }
+                        item[5] += TRIAL_N;
+                        AI_LIST[i] = item;
+                        ITERATE_AI = true;
+                    }, 10);                    
                 }
             }
             r_c_score_list = AI_LIST.map(x => [x[0], x[1], 10*x[4]/(x[5] || 1)]);
@@ -700,7 +726,7 @@ function startGame(playerChar){
     insertFace("normal");
     playVoice(VOICE_ID_START);
     currentBoard = new Board();
-    if(AI_CHAR === 'o'){
+    if(AI_CHAR === '*'){
         AI_THINKING = true;
         Brain.think(currentBoard, AI_CHAR);
     }else{
@@ -710,14 +736,14 @@ function startGame(playerChar){
 }
 
 window.onload = function() {
-    currentBoard.setList(Brain.getList(currentBoard, 'o'), 'o', false);
+    currentBoard.setList(Brain.getList(currentBoard, PLAYER_CHAR), PLAYER_CHAR, false);
     console.log(currentBoard);
     const board = document.getElementById("board");
     board.addEventListener("click", playerInput);
     setInterval(frameUpdate, 100);
     document.getElementById("bgm").volume = 0.3;
-    renderInsideInfo();
     insertFace("normal");
+    renderInsideInfo();
     currentBoard = updateBoard(currentBoard);
     document.getElementById("versionDiv").innerHTML = "Version 0.3<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
 };
