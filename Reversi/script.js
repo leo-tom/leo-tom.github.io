@@ -1,4 +1,4 @@
-const DIFFICULTY_CONST = 256;
+const DIFFICULTY_CONST = 128;
 
 let DIFFICULTY = 256;
 //const DIFFICULTY = 20;
@@ -113,6 +113,18 @@ class Board{
     isGameOver(){
         return !this.isPuttable('o') && !this.isPuttable('*');
     }
+    isShuban(){
+        let FACTOR = 20; //less than 20 ' 's means shuban
+        for(let r=0; r<8; r++){
+            for(let c=0; c<8; c++){
+                if(this.cells[r][c] === ' '){
+                    FACTOR--;
+                    if(FACTOR <= 0) return false;
+                }
+            }
+        }
+        return true;
+    }
     countPieces(player){
         let count = 0;
         for(let r=0; r<8; r++){
@@ -206,8 +218,9 @@ class Brain{
         const index = Math.floor(Math.random() * size);
         return index;
     }
-    static __think(board, player, r, c){
+    static __think(board, player, r, c,spaces){
         board.put(r, c, player)
+        spaces = spaces - 1;
         if(board.isGameOver()){
             const myCount = board.countPieces(player);
             const oppCount = board.countPieces(player === 'o' ? '*' : 'o');
@@ -218,24 +231,51 @@ class Brain{
         if(list.length === 0){
             // Opponent has no moves
             let list2 = Brain.getList(board, player);
-            let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list2,player) : Brain.randomSelect(list2);
+            let index = -1; 
+            const cindex = Brain.Corner(list);
+            if(cindex >= 0){
+                if(Math.random() < 0.8){
+                    index = cindex;
+                }
+            }
+            if(index < 0){
+                if (spaces <= 20){
+                    index = Brain.randomSelect(list2);
+                }else{
+                    index = Brain.kaihoudoSelect(board,list2,player);
+                }
+            }
             r = list2[index][0];
             c = list2[index][1];
-            return this.__think(board, player, r, c);
+            return this.__think(board, player, r, c,spaces);
         }
 
-        let index = Math.random() < 0.4 ? Brain.kaihoudoSelect(board,list,opponent) : Brain.randomSelect(list);
+        let index =-1;
+        const cindex = Brain.Corner(list);
+        if(cindex >= 0){
+            if(Math.random() < 0.8){
+                index = cindex;
+            }
+        }
+        if(index < 0){
+            if (spaces <= 20){
+                index = Brain.randomSelect(list);
+            }else{
+                index = Brain.kaihoudoSelect(board,list,opponent);
+            }
+        }
         r = list[index][0];
         c = list[index][1];
-        return -this.__think(board, opponent, r, c);
+        return -this.__think(board, opponent, r, c,spaces);
 
     }
     static _think(board, player){
         let list = Brain.getList(board, player);
+        let spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
         for(let index=0; index<list.length; index++){
             let [r, c, score] = list[index];
-            for(let _=0; _<DIFFICULTY; _++){
-                score += this.__think(board.duplicate(), player, r, c);
+            for(let _=0; _<DIFFICULTY/2; _++){
+                score += this.__think(board.duplicate(), player, r, c,spaces);
             }
             list[index] = [r, c, score];
         }
@@ -244,7 +284,7 @@ class Brain{
         for(let n=0;n<DIFFICULTY*2;n++){
             let index = Brain.rouletteSelect(normalizedList);
             let [r, c, score] = list[index];
-            score += Brain.__think(board.duplicate(),player,r,c);
+            score += Brain.__think(board.duplicate(),player,r,c,spaces);
             list[index] = [r,c,score];
             if (n % 64 == 0){
                 if(document.getElementById("bgm").paused){
@@ -262,6 +302,12 @@ class Brain{
         const number_of_pieces = board.countPieces(player) + board.countPieces(player_opponent);
         if (number_of_pieces == 4){
             AI_LIST = [ [4,5,[],null,420,10*DIFFICULTY] ];
+            ITERATE_AI = true;
+            AI_LIST_SIZE = 1;
+            return;
+        }
+        if (list.length === 1){
+            AI_LIST = [ [list[0][0],list[0][1],[],null,10*DIFFICULTY,10*DIFFICULTY] ];
             ITERATE_AI = true;
             AI_LIST_SIZE = 1;
             return;
@@ -306,8 +352,13 @@ class Brain{
 
 
 function updateBoard(_instance = new Board()) {
-    const board = document.getElementById("board");
+    const isSmartphone = window.innerWidth <= 800;
+    let board = document.getElementById("board");
     board.innerHTML = '';
+    if(isSmartphone){
+        let faceEle = document.getElementById("face")
+        board.style.top = faceEle.offsetTop + faceEle.height + 20 + "px";
+    }
     let red_weight = Array(8).fill(null).map(() => Array(8).fill(0));
     if(document.getElementById("bgm").paused){
         document.getElementById("bgm").play();
@@ -327,7 +378,7 @@ function updateBoard(_instance = new Board()) {
         }
     }
     const WINDOW_WIDTH = window.innerWidth;
-    const CELL_SIZE = Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     const BOARD_WIDTH = CELL_SIZE * 8;
     const CELL_SIZE_STR = `${CELL_SIZE}px`;
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
@@ -392,11 +443,13 @@ function updateBoard(_instance = new Board()) {
 }
 
 function drawCircleAt(r,c, color="yellow",opacity=0.5){
+    const isSmartphone = window.innerWidth <= 800;
+    const WINDOW_WIDTH = window.innerWidth;
     const board = document.getElementById("board");
     const cell  = document.getElementById(`cell-${r}-${c}`);
     if(!cell) return;
     const circle = document.createElement("div");
-    const CELL_SIZE = Math.floor(window.innerWidth * 0.50 / 8);
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
     const CIRCLE_SIZE = Math.floor(KOMA_SIZE / 2);
     const CIRCLE_SIZE_STR = `${CIRCLE_SIZE}px`;
@@ -414,14 +467,19 @@ function drawCircleAt(r,c, color="yellow",opacity=0.5){
 }
 
 function renderInsideInfo(){
-    const faceEle = document.getElementById("face");
+    const isSmartphone = window.innerWidth <= 800;
+    let faceEle = document.getElementById("face");
     let ele = document.getElementById("info");
     let progressBar = document.getElementById("progressBar");
     ele.style.position = "absolute";
     ele.style.width = faceEle.width + "px";
-    ele.style.top = (faceEle.offsetTop + faceEle.height + 10) + "px";
-    ele.style.right = faceEle.style.right;
-    progressBar.style.width = (faceEle.width - 20) + "px";
+    if (isSmartphone){
+        ele.style.top = (faceEle.offsetTop + faceEle.height + 3) + "px";
+    } else {
+        ele.style.top = (faceEle.offsetTop + faceEle.height + 10) + "px";
+    }
+    ele.style.left = faceEle.offsetLeft + "px";
+    progressBar.style.width = (faceEle.width - 0) + "px";
     if(AI_CHAR === '*'){
         progressBar.style.backgroundColor = "black";
     }else{
@@ -432,8 +490,8 @@ function renderInsideInfo(){
     box.style.backgroundColor = PLAYER_CHAR === '*' ? "black" : "white";
     box.style.position = "absolute";
     box.style.left = "0px";
-    box.style.height = "20px";
-    console.log(RATE);
+    box.style.height = isSmartphone ? "10px" : "20px";
+    //console.log(RATE);
     progressBar.innerHTML = '';
     progressBar.appendChild(box);
     let leftText = document.getElementById("leftText");
@@ -446,7 +504,12 @@ function renderInsideInfo(){
 
 function insertFace(face = "normal"){
     const img = document.getElementById("face");
-    img.src = `face/${face}.jpg`;
+    const isSmartphone = window.innerWidth <= 800;
+    if(isSmartphone){
+        img.src = `face/${face}-short.jpg`;
+    }else{
+        img.src = `face/${face}.jpg`;
+    }
     renderInsideInfo();
 }
 
@@ -496,13 +559,14 @@ function frameUpdate(){
                         const board = item[3];
                         const score = item[4];
                         const TRIAL_N=Math.ceil(DIFFICULTY/8);
+                        const spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
                         for(let n = 0;n < TRIAL_N; n++){
                             if(opp_list.length === 0) break;
                             const tuple = opp_list[Brain.rouletteSelect(opp_list)];
                             const r2 = tuple[0];
                             const c2 = tuple[1];
-                            const prob = tuple[2];
-                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2);
+                            //const prob = tuple[2];
+                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2,spaces);
                         }
                         item[5] += TRIAL_N;
                         AI_LIST[i] = item;
@@ -541,7 +605,7 @@ function frameUpdate(){
                     currentBoard.setList(Brain.getList(currentBoard, AI_CHAR), AI_CHAR, true);
                     return;
                 }
-                if(currentBoard.countPieces('*') + currentBoard.countPieces('o') > 5){
+                if(currentBoard.countPieces('*') + currentBoard.countPieces('o') > 5 && AI_LIST_SIZE != 1){
                     if(score >= 0.5){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
@@ -589,9 +653,11 @@ function gameEnded(){
 }
 
 function playerInput(event) {
+    const isSmartphone = window.innerWidth <= 800;
+    const WINDOW_WIDTH = window.innerWidth;
     const board = document.getElementById("board");
-    const rect = board.getBoundingClientRect();
-    const CELL_SIZE = Math.floor(window.innerWidth * 0.50 / 8);
+    const rect = document.getElementById("cell-0-0").getBoundingClientRect();
+    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.70 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
     console.log(CELL_SIZE);
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -645,15 +711,17 @@ function startGame(playerChar){
 window.onload = function() {
     currentBoard.setList(Brain.getList(currentBoard, 'o'), 'o', false);
     console.log(currentBoard);
-    currentBoard = updateBoard(currentBoard);
     const board = document.getElementById("board");
     board.addEventListener("click", playerInput);
     setInterval(frameUpdate, 100);
     document.getElementById("bgm").volume = 0.3;
     renderInsideInfo();
-    document.getElementById("versionDiv").innerHTML = "Version 0.1<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
+    insertFace("normal");
+    currentBoard = updateBoard(currentBoard);
+    document.getElementById("versionDiv").innerHTML = "Version 0.2<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
 };
 
 window.onresize = function() {
     currentBoard = updateBoard(currentBoard);
+    renderInsideInfo();
 }
