@@ -122,7 +122,7 @@ class Board{
             //late game
             result += Math.log10((n_my_pieces + 1) / (n_opponent_pieces + 1));
         }else{
-            const factor = 0.5*Math.exp(-depth*depth / (42*42));
+            const factor = 0.8*Math.exp(-depth*depth / (32*32));
             result += factor * Math.log10((player_next_move + 1) / (opponent_next_move + 1));
         }
         return result;
@@ -532,7 +532,7 @@ class Nord{
                     break;
                 }
                 if(child.searched){
-                    child.calculate_score();
+                    child.calculateScore();
                     continue;
                 }else if(child.isWinGaranteed()){
                     break;
