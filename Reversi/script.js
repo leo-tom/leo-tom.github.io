@@ -866,7 +866,7 @@ function frameUpdate(){
                     const [r,c,child] = HEAD.list[index];
                     if(child !== null && child.isWinGaranteed()){
                         max_index = index;
-                        SCORE = Number.POSITIVE_INFINITY;
+                        SCORE = 10;
                         break;
                     }
                 }
@@ -877,7 +877,7 @@ function frameUpdate(){
                     const [r,c,child] = HEAD.list[index];
                     r_c_score_list.push([r,c,10*child.score]);
                     if(child.isWinGaranteed()){
-                        SCORE = 1.0;
+                        SCORE = 10.0;
                         max_index = index;
                         break;
                     }
@@ -921,7 +921,7 @@ function frameUpdate(){
                 //HEAD.board.print2Console();
                 currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
                 SECRET_THINKING = 100;
-                SCORE = HEAD.depth / 64;
+                SCORE *= HEAD.depth / 64;
                 if(HEAD.depth > 6){
                     if(SCORE >= 0.9){
                         insertFace("laugh");
