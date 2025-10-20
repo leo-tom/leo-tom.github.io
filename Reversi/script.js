@@ -91,9 +91,9 @@ class Board{
         if(player_next_move === 0 && opponent_next_move === 0){
             const result = n_my_pieces - n_opponent_pieces;
             if(result > 0){
-                return 1;
+                return 100;
             }else if(result < 0){
-                return -1;
+                return -100;
             }else{
                 return 0.1;
             }
@@ -122,8 +122,8 @@ class Board{
             //late game
             result += Math.log10((n_my_pieces + 1) / (n_opponent_pieces + 1));
         }else{
-            const factor = 0.8*Math.exp(-depth*depth / (32*32));
-            result += factor * Math.log10((player_next_move + 1) / (opponent_next_move + 1));
+            //const factor = 0.8*Math.exp(-depth*depth / (32*32));
+            result += Math.log10((player_next_move + 1) / (opponent_next_move + 1));
         }
         return result;
     }
