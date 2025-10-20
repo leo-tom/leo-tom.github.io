@@ -102,9 +102,13 @@ class Board{
         const yosumi_char = [this._get(0,0), this._get(0,7), this._get(7,7), this._get(7,0)];
         const lines = [
             {coords: i => [0, i], cornerIdx: 0},
-            {coords: i => [7-i, 7], cornerIdx: 2},
+            {coords: i => [i, 0], cornerIdx: 0},
             {coords: i => [i, 7], cornerIdx: 1},
-            {coords: i => [7, 7-i], cornerIdx: 3},
+            {coords: i => [0, 7-i], cornerIdx: 1},
+            {coords: i => [7-i, 7], cornerIdx: 2},
+            {coords: i => [7, 7-i], cornerIdx: 2},
+            {coords: i => [7, i], cornerIdx: 3},
+            {coords: i => [7-i, 0], cornerIdx: 3},
         ];
         for (const {coords, cornerIdx} of lines) {
             const corner = yosumi_char[cornerIdx];
@@ -114,7 +118,7 @@ class Board{
                 if (v === ' ' || v !== corner){
                     break;
                 }
-                result += (v === player ? 0.5 : -0.5) * (8 - i) / 8;
+                result += (v === player ? 0.4 : -0.4) * (8 - i) / 8;
             }
         }
         const depth = n_my_pieces + n_opponent_pieces;
@@ -463,7 +467,7 @@ class Nord{
                 //let chosen_child = Math.random() < 1/3 ? this.get_a_child() : this.minimaxSelect();
                 let chosen_child = null;
                 if(this.player === AI_CHAR){
-                    chosen_child = Math.random() < 1/8 ? this.get_a_child(true) : this.minimaxSelect();
+                    chosen_child = Math.random() < 1/4 ? this.get_a_child(true) : this.minimaxSelect();
                 }else{
                     chosen_child = this.get_a_child(true) ;//Math.random() < 1/2 ? this.get_a_child()  : this.minimaxSelect();
                 }
@@ -582,6 +586,10 @@ class Nord{
                     if(result == false){
                         allChildrenAreWinGuaranteed = false;
                     }
+                }
+            }else{
+                if(this.player == PLAYER_CHAR){
+                    allChildrenAreWinGuaranteed = false;
                 }
             }
         }
