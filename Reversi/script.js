@@ -438,6 +438,7 @@ class Nord{
     
     _think(number_of_new_born,all_search_depth = 0){
         if(this.searched){
+            this.isWinGaranteed();
             return 0;
         }else if(number_of_new_born <= 0){
             this.calculateScore();
@@ -531,6 +532,7 @@ class Nord{
                     break;
                 }
                 if(child.searched){
+                    child.calculate_score();
                     continue;
                 }else if(child.isWinGaranteed()){
                     break;
@@ -588,7 +590,7 @@ class Nord{
             return this.winGaranteed;
         }else if(allChildrenAreWinGuaranteed){
             this.winGaranteed = true;
-            this.searched 
+            this.searched = true;
         }
         return this.winGaranteed;
     }
