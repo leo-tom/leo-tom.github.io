@@ -203,15 +203,16 @@ class Nord{
         if(this.board.isGameOver()){
             this.gameFinished = this.board.countPieces(AI_CHAR) - this.board.countPieces(PLAYER_CHAR);
             if(this.gameFinished === 0){
-                this.gameFinished = -0.1; // draw is slightly negatives
-                this.score = -0.1;
-            }else if(this.gameFinished > 0){
-                this.score = 1;
-            }else{
+                this.gameFinished = -1; // draw is slightly negatives
                 this.score = -1;
+            }else if(this.gameFinished > 0){
+                this.score = 10;
+            }else{
+                this.score = -10;
             }
             this.searched = true;
             this.n_descendant = 1;
+            this.winGaranteed = this.score > 0;
         }else{
             this.list = this.getList();
             this.estimated_score = new Array(this.list.length).fill(0);
@@ -375,48 +376,13 @@ class Nord{
         return selected_child;
     }
     calculateScore(){
-        if(this.gameFinished !== 0){
-            if(this.gameFinished > 0){
-                return this.score = 1;
-            }else{
-                return this.score = -1;
-            }
-            this.n_descendant = 1;
-        }
         let decisive = this.isWinGaranteed();
         if(decisive !== undefined){
             if(decisive){
-                return this.score = 1;
+                return this.score = 10;
             }else{
-                return this.score = -1;
+                return this.score = -10;
             }
-        }
-        let allChildrenSearched = true;
-        let searchedChildrenExists = false;
-        this.n_descendant = 1; // count self
-        for(let index = 0; index < this.list.length; index++){
-            const [r,c,child] = this.list[index];
-            if(child){
-                this.n_descendant += child.n_descendant;
-                if(!child.searched){
-                    allChildrenSearched = false;
-                }else{
-                    searchedChildrenExists = true;
-                }
-            }else{
-                allChildrenSearched = false;
-                continue;
-            }
-        }
-        if(allChildrenSearched){
-            this.searched = true;
-            this.score = this.isWinGaranteed() ? 1 : -1;
-            return this.score;
-        }else if(searchedChildrenExists){
-            // searched children's score is most accurate
-            const searchedScores = this.list.map(([, , child]) => (child && child.searched) ? child.score : null).filter(score => score !== null);
-            this.score = (this.player === AI_CHAR) ? Math.max(...searchedScores) : Math.min(...searchedScores);
-            return this.score;
         }
 
         // normal score calculation
@@ -582,18 +548,12 @@ class Nord{
         
     }
     isWinGaranteed(){
-        if(this.gameFinished !== 0){
-            this.winGaranteed = this.gameFinished > 0;
-            this.searched = true;
-            return this.winGaranteed;
-        }
         if(this.winGaranteed !== undefined){
             return this.winGaranteed;
         }
         this.winGaranteed = undefined;
         let allChildrenAreWinGuaranteed = true;
         let all_null = true;
-        let null_exists = false;
         this.searched = true;
         for(let [r,c,child] of this.list){
             if(child === null){
@@ -612,6 +572,7 @@ class Nord{
                     if(result){
                         this.winGaranteed = true;
                         this.searched = true;
+                        this.score = 10;
                         return true;
                     }
                 }else{
@@ -624,8 +585,9 @@ class Nord{
         if(all_null){
             this.winGaranteed = undefined;
             return this.winGaranteed;
-        }else if(allChildrenAreWinGuaranteed && !null_exists){
+        }else if(allChildrenAreWinGuaranteed){
             this.winGaranteed = true;
+            this.searched 
         }
         return this.winGaranteed;
     }
