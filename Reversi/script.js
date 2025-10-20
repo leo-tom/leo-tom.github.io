@@ -557,7 +557,6 @@ class Nord{
         this.searched = true;
         for(let [r,c,child] of this.list){
             if(child === null){
-                null_exists = true;
                 this.searched = false;
                 allChildrenAreWinGuaranteed = false;
                 continue;
