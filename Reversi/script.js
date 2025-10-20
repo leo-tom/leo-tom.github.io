@@ -543,7 +543,7 @@ class Nord{
                 }
             }
             if(best_child !== null){
-                best_child._think(8);
+                best_child._think(best_child.score > 90 ? 32 : 8);
             }
         }
         this.calculateScore();
