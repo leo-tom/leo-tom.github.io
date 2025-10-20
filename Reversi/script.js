@@ -389,6 +389,7 @@ class Nord{
         this.score = 0;
         let likely_to_be_chosen = AI_CHAR === this.player ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
         let likely_to_be_chosen_index = -1;
+        this.n_descendant = 1;
         if(this.get_n_null_children() === this.list.length){
             for(let index = 0; index < this.list.length; index++){
                 if(this.player === AI_CHAR){
@@ -408,6 +409,7 @@ class Nord{
             for(let index = 0; index < this.list.length; index++){
                 let [r,c,child] = this.list[index];
                 if(child){
+                    this.n_descendant += child.n_descendant;
                     // minimax
                     if(this.player === AI_CHAR){
                         if(child.score > likely_to_be_chosen){
