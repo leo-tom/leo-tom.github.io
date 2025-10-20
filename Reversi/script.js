@@ -1,6 +1,6 @@
-const DIFFICULTY_CONST = 128;
+//const DIFFICULTY_CONST = 128;
+const DIFFICULTY_CONST = 5;
 
-let DIFFICULTY = 256;
 //const DIFFICULTY = 20;
 
 const VOICE_ID_WIN = ["win01","win02","win03"];
@@ -69,41 +69,72 @@ class Board{
         }
         return total_flip;
     }
-    calculateKaihoudo(r,c,player){
-        if(this._get(r,c) !== ' ') return false;
-        const opponent = player === 'o' ? '*' : 'o';
-        let kaihoDo = 0;
-        const directions = [
-            [-1, -1], [-1, 0], [-1, 1],
-            [0, -1],          [0, 1],
-            [1, -1], [1, 0], [1, 1]
-        ];
-        for(const [dr, dc] of directions){
-            let nr = r + dr;
-            let nc = c + dc;
-            let toFlip = [];
-            while(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === opponent){
-                toFlip.push([nr, nc]);
-                nr += dr;
-                nc += dc;
-            }
-            if(nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && this._get(nr,nc) === player && toFlip.length > 0){
-                for(const [fr, fc] of toFlip){
-                    for (const [adr, adc] of directions) {
-                        const ar = fr + adr;
-                        const ac = fc + adc;
-                        if (
-                            ar >= 0 && ar < 8 &&
-                            ac >= 0 && ac < 8 &&
-                            this._get(ar,ac) === ' '
-                        ) {
-                            kaihoDo++;
-                        }
+    calculate_n_next_moves(player){
+        let n_next_moves = 0;
+        for(let r=0; r<8; r++){
+            for(let c=0; c<8; c++){
+                if(this._get(r,c) === ' '){
+                    if(this.put(r,c,player,false)){
+                        n_next_moves++;
                     }
                 }
             }
         }
-        return kaihoDo;
+        return n_next_moves;
+    }
+    score(player){
+        const opponent = player === 'o' ? '*' : 'o';
+        const player_next_move = this.calculate_n_next_moves(player);
+        const opponent_next_move = this.calculate_n_next_moves(opponent);
+        const n_my_pieces = this.countPieces(player);
+        const n_opponent_pieces = this.countPieces(opponent);
+        if(player_next_move === 0 && opponent_next_move === 0){
+            const result = n_my_pieces - n_opponent_pieces;
+            if(result > 0){
+                return 1;
+            }else if(result < 0){
+                return -1;
+            }else{
+                return 0.1;
+            }
+        }
+        let result = 0;
+        const yosumi_char = [this._get(0,0), this._get(0,7), this._get(7,7), this._get(7,0)];
+        const lines = [
+            {coords: i => [0, i], cornerIdx: 0},
+            {coords: i => [7-i, 7], cornerIdx: 2},
+            {coords: i => [i, 7], cornerIdx: 1},
+            {coords: i => [7, 7-i], cornerIdx: 3},
+        ];
+        for (const {coords, cornerIdx} of lines) {
+            const corner = yosumi_char[cornerIdx];
+            for (let i = 0; i < 8; i++) {
+                const [r, c] = coords(i);
+                const v = this._get(r, c);
+                if (v === ' ' || v !== corner){
+                    break;
+                }
+                result += (v === player ? 0.5 : -0.5) * (8 - i) / 8;
+            }
+        }
+        const depth = n_my_pieces + n_opponent_pieces;
+        if(n_my_pieces + n_opponent_pieces >= 58){
+            //late game
+            result += Math.log10((n_my_pieces + 1) / (n_opponent_pieces + 1));
+        }else{
+            const factor = 0.5*Math.exp(-depth*depth / (42*42));
+            result += factor * Math.log10((player_next_move + 1) / (opponent_next_move + 1));
+        }
+        return result;
+    }
+    print2Console(){
+        for(let r=0; r<8; r++){
+            let rowStr = "";
+            for(let c=0; c<8; c++){
+                rowStr += this._get(r,c);
+            }
+            console.log(rowStr);
+        }
     }
     isPuttable(player){
         for(let r=0; r<8; r++){
@@ -140,7 +171,13 @@ class Board{
         }
         for(const [r, c, val] of list){
             if(renderScore){
-                this.render[r][c] = val.toFixed(1);
+                if(val === Number.POSITIVE_INFINITY){
+                    this.render[r][c] = "∞";
+                }else if(val === Number.NEGATIVE_INFINITY){
+                    this.render[r][c] = "-∞";
+                }else{
+                    this.render[r][c] = val.toFixed(1);
+                }
             }else{
                 this.render[r][c] = this.put(r,c,player,false) + "";
             }
@@ -148,203 +185,457 @@ class Board{
     }
 };
 
-class Brain{
-    static LIST = [];
-    static normalizeList(list){
-        if(list.length === 0) return list;
-        const minScore = Math.min(...list.map(x => x[2]));
-        const adjustedScores = list.map(x => x[2] - minScore + 1);
-        const totalScore = adjustedScores.reduce((a, b) => a + b, 0);
-        return list.map((x, i) => [x[0], x[1], adjustedScores[i] / totalScore]);
+class Nord{
+    
+    constructor(board, player,depth = -1){
+        this.board = board;
+        if(depth < 0){
+            this.depth = this.board.countPieces(AI_CHAR) + this.board.countPieces(PLAYER_CHAR);
+        }else{
+            this.depth = depth;
+        }
+        
+        this.gameFinished = 0;
+        this.score = 0;
+        this.searched = false;
+        this.n_descendant = 0;
+        this.player = player;
+        if(this.board.isGameOver()){
+            this.gameFinished = this.board.countPieces(AI_CHAR) - this.board.countPieces(PLAYER_CHAR);
+            if(this.gameFinished === 0){
+                this.gameFinished = -0.1; // draw is slightly negatives
+                this.score = -0.1;
+            }else if(this.gameFinished > 0){
+                this.score = 1;
+            }else{
+                this.score = -1;
+            }
+            this.searched = true;
+            this.n_descendant = 1;
+        }else{
+            this.list = this.getList();
+            this.estimated_score = new Array(this.list.length).fill(0);
+            const next_player = this.player === 'o' ? '*' : 'o';
+            for (let index= 0; index < this.list.length; index++){
+                let [r,c,child] = this.list[index];
+                const newBoard = this.board.duplicate();
+                newBoard.put(r,c,this.player);
+                this.estimated_score[index] = newBoard.score(AI_CHAR);
+            }
+        }
+        
+        
+        
     }
-    static getList(board, player){
+    getList(){
         const list = [];
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
-                if(board._get(r,c) === ' '){
-                    if(board.put(r, c, player, false)){
-                        list.push([r, c, 0]);
+                if(this.board._get(r,c) === ' '){
+                    if(this.board.put(r, c, this.player, false)){
+                        list.push([r, c, null]);
                     }
                 }
             }
         }
         return list;
     }
+    static normalizeList(scores) {
+        let minScore = Infinity;
+        for (let i = 0; i < scores.length; i++) {
+            const v = scores[i][0];
+            if (v < minScore){
+                minScore = v;
+            }
+        }
 
-    static rouletteSelect(list){
-        const probs = list.map(x => x[2]);
+        let total = 0;
+        for (let i = 0; i < scores.length; i++) {
+            const v = scores[i][0];
+            scores[i][0] = v - minScore + 1;
+            total += scores[i][0];
+        }
+
+        const invTotal = 1 / total;
+        for (let i = 0; i < scores.length; i++) {
+            scores[i][0] *= invTotal;
+        }
+        return scores;
+    }
+    static rouletteSelect(probs){
         const rndVal = Math.random();
         let cumulative = 0;
         for(let i=0; i<probs.length; i++){
-            cumulative += probs[i];
+            cumulative += probs[i][0];
             if(rndVal < cumulative){
-                return i;
+                return probs[i][1];
             }
         }
-        return -1; // Should not reach here
+        return null; // Should not reach here
     }
-
-    static Corner(list){
-        for(let index = 0;index< list.length;index++){
-            let r = list[index][0];
-            let c = list[index][1];
-            if(r === 0 && c === 0){return index;}
-            else if(r === 0 && c=== 7){return index;}
-            else if(r === 7 && c=== 0){return index;}
-            else if(r === 7 && c=== 7){return index;}
-        }
-        return -1;
-    }
-
-    static kaihoudoSelect(board,list,player){
-        let kaihodoList = list.map(x => [x[0],x[1],-board.calculateKaihoudo(x[0],x[1],player) ]);
-        return Brain.rouletteSelect(Brain.normalizeList(kaihodoList));
-    }
-
-    static randomSelect(list){
-        const cindex = Brain.Corner(list);
-        if(cindex >= 0){
-            if(Math.random() < 0.9){
-                return cindex;
+    scoreSelect(){
+        const factor = this.player === AI_CHAR ? 1 : -1;
+        const scores = [];
+        for (let i = 0; i < this.list.length; i++) {
+            const x = this.list[i];
+            if (x[2] != null && !x[2].searched){
+                scores.push([factor * x[2].score,x[2]]);
             }
         }
-                
-        const size = list.length;
-        const index = Math.floor(Math.random() * size);
-        return index;
-    }
-    static __think(board, player, r, c,spaces){
-        board.put(r, c, player)
-        spaces = spaces - 1;
-        if(board.isGameOver()){
-            const myCount = board.countPieces(player);
-            const oppCount = board.countPieces(player === 'o' ? '*' : 'o');
-            return (myCount - oppCount) < 0 ? -1 : 1;
+        if(scores.length === 0){
+            return null;
+        }else if(scores.length === 1){
+            //this happens frequently in early game
+            return scores[0][1];
         }
-        const opponent = player === 'o' ? '*' : 'o';
-        let list = Brain.getList(board, opponent);
-        if(list.length === 0){
-            // Opponent has no moves
-            let list2 = Brain.getList(board, player);
-            let index = -1; 
-            const cindex = Brain.Corner(list);
-            if(cindex >= 0){
-                if(Math.random() < 0.8){
-                    index = cindex;
-                }
-            }
-            if(index < 0){
-                if (spaces <= 20){
-                    index = Brain.randomSelect(list2);
+        return Nord.rouletteSelect(Nord.normalizeList(scores));
+    }
+    minimaxSelect(){
+        let best_score = this.player === AI_CHAR ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+        let best_child = null;
+        let best_index = -1;
+        for (let i = 0; i < this.list.length; i++) {
+            const x = this.list[i];
+            if (x[2] != null){
+                if(best_child === null){
+                    best_child = x[2];
                 }else{
-                    index = Brain.kaihoudoSelect(board,list2,player);
+                    if(this.player === AI_CHAR){
+                        if(x[2].score > best_score){
+                            best_score = x[2].score;
+                            best_child = x[2];
+                        }
+                    }else{
+                        if(x[2].score < best_score){
+                            best_score = x[2].score;
+                            best_child = x[2];
+                        }
+                    }
                 }
             }
-            r = list2[index][0];
-            c = list2[index][1];
-            return this.__think(board, player, r, c,spaces);
         }
-
-        let index =-1;
-        const cindex = Brain.Corner(list);
-        if(cindex >= 0){
-            if(Math.random() < 0.8){
-                index = cindex;
+        if(best_child === null){
+            // get_a_child is minimax selection.
+            best_child = this.get_a_child(true);
+        }
+        return best_child;
+    }
+    get_n_null_children(){
+        let n_null_children = 0;
+        for(let index = 0; index < this.list.length; index++){
+            let [r,c,child] = this.list[index];
+            if(child === null){
+                n_null_children += 1;
             }
         }
-        if(index < 0){
-            if (spaces <= 20){
-                index = Brain.randomSelect(list);
+        return n_null_children;
+    }
+    get_a_child(forceNullkill = false){
+        const n_null_children = this.get_n_null_children();
+        if(forceNullkill || n_null_children === this.list.length || (n_null_children > 0 ) ){
+            let chosen_index = -1;
+            let next_move_score = this.player === AI_CHAR ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+            const next_player = this.player === 'o' ? '*' : 'o';
+            for (let index= 0; index < this.list.length; index++){
+                let [r,c,child] = this.list[index];
+                if(child === null){
+                    if(this.player === AI_CHAR){
+                        if(this.estimated_score[index] > next_move_score){
+                            next_move_score = this.estimated_score[index];
+                            chosen_index = index;
+                        }
+                    }else{
+                        if( this.estimated_score[index] < next_move_score){
+                            next_move_score = this.estimated_score[index];
+                            chosen_index = index;
+                        }
+                    }
+                }
+            }
+            if(chosen_index >= 0){
+                let [r,c,child] = this.list[chosen_index];
+                const newBoard = this.board.duplicate();
+                newBoard.put(r,c,this.player);
+                if(newBoard.isPuttable(next_player)){
+                    child = new Nord(newBoard, next_player,this.depth + 1);
+                }else{
+                    child = new Nord(newBoard, this.player,this.depth + 1);
+                }
+                this.list[chosen_index][2] = child;
+                child.newBorn = true;
+                return child;
+            }
+        }
+        let selected_child = this.scoreSelect();
+        if(selected_child === null){
+            //console.log(this);
+            return null;
+        }
+        selected_child.newBorn = false;
+        return selected_child;
+    }
+    calculateScore(){
+        if(this.gameFinished !== 0){
+            if(this.gameFinished > 0){
+                return this.score = 1;
             }else{
-                index = Brain.kaihoudoSelect(board,list,opponent);
+                return this.score = -1;
+            }
+            this.n_descendant = 1;
+        }
+        let decisive = this.isWinGaranteed();
+        if(decisive !== undefined){
+            if(decisive){
+                return this.score = 1;
+            }else{
+                return this.score = -1;
             }
         }
-        r = list[index][0];
-        c = list[index][1];
-        return -this.__think(board, opponent, r, c,spaces);
-
-    }
-    static _think(board, player){
-        let list = Brain.getList(board, player);
-        let spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
-        for(let index=0; index<list.length; index++){
-            let [r, c, score] = list[index];
-            for(let _=0; _<DIFFICULTY/2; _++){
-                score += this.__think(board.duplicate(), player, r, c,spaces);
-            }
-            list[index] = [r, c, score];
-        }
-        list.sort((a, b) => b[2] - a[2]);
-        let normalizedList=Brain.normalizeList(list);
-        for(let n=0;n<DIFFICULTY*2;n++){
-            let index = Brain.rouletteSelect(normalizedList);
-            let [r, c, score] = list[index];
-            score += Brain.__think(board.duplicate(),player,r,c,spaces);
-            list[index] = [r,c,score];
-            if (n % 64 == 0){
-                if(document.getElementById("bgm").paused){
-                    document.getElementById("bgm").play();
-                }
-            }
-        }
-        list.sort((a, b) => b[2] - a[2]);
-        return Brain.normalizeList(list);
-    }
-    static think(board, player){
-        let list = Brain.getList(board, player);
-        AI_LIST = [];
-        const player_opponent = player === 'o' ? '*' : 'o';
-        const number_of_pieces = board.countPieces(player) + board.countPieces(player_opponent);
-        if (number_of_pieces == 4){
-            AI_LIST = [ [4,5,[],null,420,10*DIFFICULTY] ];
-            ITERATE_AI = true;
-            AI_LIST_SIZE = 1;
-            return;
-        }
-        if (list.length === 1){
-            AI_LIST = [ [list[0][0],list[0][1],[],null,10*DIFFICULTY,10*DIFFICULTY] ];
-            ITERATE_AI = true;
-            AI_LIST_SIZE = 1;
-            return;
-        }
-        const _number_of_pieces = number_of_pieces - 4;
-        DIFFICULTY = Math.ceil(DIFFICULTY_CONST * 1.0/(1.0 + Math.exp(-_number_of_pieces*_number_of_pieces/16)));
-        console.log(`AI is thinking... Difficulty: ${DIFFICULTY}, Pieces on board: ${number_of_pieces}`);
-        if(list.length >= 5 && number_of_pieces <= 24){
-            playVoice(VOICE_ID_THINKING);
-        }
-        AI_LIST_SIZE = list.length;
-        for(let index=0; index<list.length; index++){
-            setTimeout(() => {
-                let [r, c, score] = list[index];
-                let tmp = board.duplicate();
-                tmp.put(r, c, player);
-                if(tmp.isGameOver()){
-                    const myCount = tmp.countPieces(player);
-                    const oppCount = tmp.countPieces(player_opponent);
-                    if(myCount > oppCount) {score += DIFFICULTY;}
-                    else if(myCount < oppCount) {score -= DIFFICULTY;}
-                    AI_LIST.push([r, c,[],null, score,2*DIFFICULTY]);
-                    ITERATE_AI = true;
-                    return;
-                }
-                if(tmp.isPuttable(player_opponent)){
-                    const opp_list = Brain._think(tmp, player_opponent);
-                    const opp_r = opp_list[0][0];
-                    const opp_c = opp_list[0][1];
-                    drawCircleAt(opp_r, opp_c, "#51A2FF", 0.5);playSound("kyupi");
-                    AI_LIST.push([r, c, opp_list,tmp.duplicate() ,score,0]);
-                    ITERATE_AI = true;  
+        let allChildrenSearched = true;
+        let searchedChildrenExists = false;
+        this.n_descendant = 1; // count self
+        for(let index = 0; index < this.list.length; index++){
+            const [r,c,child] = this.list[index];
+            if(child){
+                this.n_descendant += child.n_descendant;
+                if(!child.searched){
+                    allChildrenSearched = false;
                 }else{
-                    AI_LIST.push([r, c,[],null ,score + 10,10*DIFFICULTY]); // Opponent has no moves, good for us
-                    ITERATE_AI = true;
+                    searchedChildrenExists = true;
                 }
-            }, index*100);
-            
+            }else{
+                allChildrenSearched = false;
+                continue;
+            }
         }
+        if(allChildrenSearched){
+            this.searched = true;
+            this.score = this.isWinGaranteed() ? 1 : -1;
+            return this.score;
+        }else if(searchedChildrenExists){
+            // searched children's score is most accurate
+            const searchedScores = this.list.map(([, , child]) => (child && child.searched) ? child.score : null).filter(score => score !== null);
+            this.score = (this.player === AI_CHAR) ? Math.max(...searchedScores) : Math.min(...searchedScores);
+            return this.score;
+        }
+
+        // normal score calculation
+        this.score = 0;
+        let likely_to_be_chosen = AI_CHAR === this.player ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+        let likely_to_be_chosen_index = -1;
+        if(this.get_n_null_children() === this.list.length){
+            for(let index = 0; index < this.list.length; index++){
+                if(this.player === AI_CHAR){
+                    if(this.estimated_score[index] > likely_to_be_chosen){
+                        likely_to_be_chosen = this.estimated_score[index];
+                        likely_to_be_chosen_index = index;
+                    }
+                }else{
+                    if( this.estimated_score[index] < likely_to_be_chosen){
+                        likely_to_be_chosen = this.estimated_score[index];
+                        likely_to_be_chosen_index = index;
+                    }
+                }
+                //this.score += this.estimated_score[index] / this.list.length;
+            }
+        }else{
+            for(let index = 0; index < this.list.length; index++){
+                let [r,c,child] = this.list[index];
+                if(child){
+                    // minimax
+                    if(this.player === AI_CHAR){
+                        if(child.score > likely_to_be_chosen){
+                            likely_to_be_chosen = child.score;
+                            likely_to_be_chosen_index = index;
+                        }
+                    }else{
+                        if(child.score < likely_to_be_chosen){
+                            likely_to_be_chosen = child.score;
+                            likely_to_be_chosen_index = index;
+                        }
+                    }
+                    //this.score += child.score * child.n_descendant / this.n_descendant;
+                }
+            }
+        }
+        // assign child's score
+        this.score = likely_to_be_chosen;// + this.board.score(AI_CHAR);
+        //if(this.score > 1){
+        //    this.score = 1;
+        //}else if(this.score < -1){
+        //    this.score = -1;
+        //}
+        return this.score;
     }
+    
+    _think(number_of_new_born,all_search_depth = 0){
+        if(this.searched){
+            return 0;
+        }else if(number_of_new_born <= 0){
+            this.calculateScore();
+            return 0;
+        }
+        let n_null_children = this.get_n_null_children();
+        let n_new_born_child = 0;
+        if(all_search_depth > 0){
+            number_of_new_born -= n_null_children;
+            const number_of_new_born_for_children = n_null_children !== 0 ? Math.floor(number_of_new_born / n_null_children) : Math.floor(number_of_new_born/this.list.length);
+            while(n_null_children > 0){
+                let a_child = this.get_a_child(true);
+                n_new_born_child += 1;
+                if(a_child.gameFinished === 0){
+                    // game is not finished, think further
+                    n_new_born_child += a_child._think(number_of_new_born_for_children,all_search_depth - 1);
+                }
+                n_null_children -= 1;
+            }
+        }else{
+            while(n_new_born_child < number_of_new_born){
+                //let chosen_child = Math.random() < 1/3 ? this.get_a_child() : this.minimaxSelect();
+                let chosen_child = null;
+                if(this.player === AI_CHAR){
+                    chosen_child = Math.random() < 1/8 ? this.get_a_child(true) : this.minimaxSelect();
+                }else{
+                    chosen_child = this.get_a_child(true) ;//Math.random() < 1/2 ? this.get_a_child()  : this.minimaxSelect();
+                }
+                
+                if(chosen_child === null){
+                    this.calculateScore();
+                    if(this.searched){
+                        return n_new_born_child;
+                    }
+                    chosen_child = this.get_a_child(true);
+                    if(chosen_child === null){
+                        console.log("Unexpected null child in _think()");
+                        break;
+                    }      
+                }
+                if(chosen_child.searched || chosen_child.isWinGaranteed() !== undefined){
+                    if(chosen_child.newBorn){
+                        // this child is probably the child at the end of the game
+                        n_new_born_child += 1;
+                        chosen_child.calculateScore();
+                        break;
+                    }
+                }else if(chosen_child.isWinGaranteed()){
+                    // this path does not need further search
+                    break;
+                }
+                if(chosen_child.newBorn){
+                    n_new_born_child += 1;
+                    n_new_born_child += chosen_child._think(number_of_new_born-n_new_born_child);
+                }else{
+                    n_new_born_child += chosen_child._think(number_of_new_born);
+                }
+            }
+        }
+        this.calculateScore();
+        return n_new_born_child;
+    }
+    think(remTimeMs = 100,secretMode=false){
+        if(this.isWinGaranteed() !== undefined){
+            return;
+        }
+        const startTime = Date.now();
+        // this will ensure that all children are evaluated at least once
+         // make sure all children are born
+        if(this.depth == 4){
+            let child;
+            this._think(4,2);
+            for(let index = 0; index < this.list.length; index++){
+                let [r,c,_child] = this.list[index];
+                if(r !== 4 && c !== 5){
+                    _child.score = Number.NEGATIVE_INFINITY;
+                }else{
+                    child = _child;
+                }
+            }
+            while (Date.now() - startTime < remTimeMs) {
+                child._think(16);
+            }
+        }
+        while (Date.now() - startTime < remTimeMs ) {
+            let best_child = null;
+            for(let index = 0; index < this.list.length; index++){
+                let [r,c,child] = this.list[index];
+                if(child === null){
+                    this._think(this.list.length,2);
+                    break;
+                }
+                if(child.searched){
+                    continue;
+                }else if(child.isWinGaranteed()){
+                    break;
+                }
+                child._think(1);
+                if(best_child === null){
+                    best_child = child;
+                }else if(this.player === AI_CHAR && child.score > best_child.score){
+                    best_child = child;
+                }
+            }
+            if(best_child !== null){
+                best_child._think(8);
+            }
+        }
+        this.calculateScore();
+        
+    }
+    isWinGaranteed(){
+        if(this.gameFinished !== 0){
+            this.winGaranteed = this.gameFinished > 0;
+            this.searched = true;
+            return this.winGaranteed;
+        }
+        if(this.winGaranteed !== undefined){
+            return this.winGaranteed;
+        }
+        this.winGaranteed = undefined;
+        let allChildrenAreWinGuaranteed = true;
+        let all_null = true;
+        let null_exists = false;
+        this.searched = true;
+        for(let [r,c,child] of this.list){
+            if(child === null){
+                null_exists = true;
+                this.searched = false;
+                allChildrenAreWinGuaranteed = false;
+                continue;
+            }else if(!child.searched){
+                this.searched = false;
+                allChildrenAreWinGuaranteed = false;
+            }
+            all_null = false;
+            let result = child.isWinGaranteed();
+            if(result !== undefined){
+                if(this.player === AI_CHAR){
+                    if(result){
+                        this.winGaranteed = true;
+                        this.searched = true;
+                        return true;
+                    }
+                }else{
+                    if(result == false){
+                        allChildrenAreWinGuaranteed = false;
+                    }
+                }
+            }
+        }
+        if(all_null){
+            this.winGaranteed = undefined;
+            return this.winGaranteed;
+        }else if(allChildrenAreWinGuaranteed && !null_exists){
+            this.winGaranteed = true;
+        }
+        return this.winGaranteed;
+    }
+
 }
 
+function getCellSize(){
+    const isSmartphone = window.innerWidth <= 800;
+    return isSmartphone ? Math.floor(window.innerWidth * 0.75 / 8) : Math.floor(window.innerHeight * 0.80 / 8);
+}
 
 function updateBoard(_instance = new Board()) {
     const isSmartphone = window.innerWidth <= 800;
@@ -367,13 +658,20 @@ function updateBoard(_instance = new Board()) {
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
                 if(_instance.render[r][c] !== ""){
-                    red_weight[r][c] = Math.floor(255 * adjustedScores[r][c]);
+                    if(_instance.render[r][c] === "∞" ){
+                        red_weight[r][c] = 255;
+                    }else if(_instance.render[r][c] === "-∞" ){
+                        red_weight[r][c] = 0;
+                    }else{
+                        red_weight[r][c] = Math.floor(255 * adjustedScores[r][c]);
+                    }
+                    
                 }
             }
         }
     }
     const WINDOW_WIDTH = window.innerWidth;
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = getCellSize();
     const BOARD_WIDTH = CELL_SIZE * 8;
     const CELL_SIZE_STR = `${CELL_SIZE}px`;
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
@@ -435,17 +733,19 @@ function updateBoard(_instance = new Board()) {
             board.appendChild(br);
         }
     }
+    if(!isSmartphone){
+        const faceEle = document.getElementById("face");
+        board.style.left = `${(WINDOW_WIDTH - BOARD_WIDTH - faceEle.width ) / 2}px`;
+    }
     return _instance;
 }
 
 function drawCircleAt(r,c, color="yellow",opacity=0.5){
-    const isSmartphone = window.innerWidth <= 800;
-    const WINDOW_WIDTH = window.innerWidth;
     const board = document.getElementById("board");
     const cell  = document.getElementById(`cell-${r}-${c}`);
     if(!cell) return;
     const circle = document.createElement("div");
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
+    const CELL_SIZE = getCellSize();
     const KOMA_SIZE = Math.floor(CELL_SIZE * 3 / 4);
     const CIRCLE_SIZE = Math.floor(KOMA_SIZE / 2);
     const CIRCLE_SIZE_STR = `${CIRCLE_SIZE}px`;
@@ -466,7 +766,6 @@ function renderInsideInfo(){
     const isSmartphone = window.innerWidth <= 800;
     let faceEle = document.getElementById("face");
     let ele = document.getElementById("info");
-    let progressBar = document.getElementById("progressBar");
     ele.style.position = "absolute";
     ele.style.width = faceEle.width + "px";
     if (isSmartphone){
@@ -481,20 +780,36 @@ function renderInsideInfo(){
     }else{
         progressBar.style.backgroundColor = "white";
     }
-    let box = document.createElement("div");
-    box.style.width = `${(1-RATE) * 100}%`;
-    box.style.backgroundColor = PLAYER_CHAR === '*' ? "black" : "white";
-    box.style.position = "absolute";
-    box.style.left = "0px";
-    box.style.height = isSmartphone ? "10px" : "20px";
-    //console.log(RATE);
-    progressBar.innerHTML = '';
-    progressBar.appendChild(box);
+    
+    if(HEAD.score || HEAD.depth === 4){
+        let progressBar = document.getElementById("progressBar");
+        let RATE = HEAD.depth === 4 ? 0.5 : HEAD.score * 0.5 + 0.5;
+        RATE = Math.min(Math.max(RATE, 0), 1);
+        let box = document.createElement("div");
+        box.style.width = `${(1-RATE) * 100}%`;
+        box.style.backgroundColor = PLAYER_CHAR === '*' ? "black" : "white";
+        box.style.position = "absolute";
+        box.style.left = "0px";
+        box.style.height = isSmartphone ? "10px" : "20px";
+        progressBar.innerHTML = '';
+        progressBar.appendChild(box);
+    }
+   
     let leftText = document.getElementById("leftText");
     let rightText = document.getElementById("rightText");
-    leftText.innerText = "あなた"
+    const PLAYER_TIME_MIN = Math.floor(PLAYER_TIME / (1000 * 60));
+    const PLAYER_TIME_SEC = Math.floor((PLAYER_TIME % (1000 * 60)) / 1000);
+    const AI_TIME_MIN = Math.floor(AI_TIME / (1000 * 60));
+    const AI_TIME_SEC = Math.floor((AI_TIME % (1000 * 60)) / 1000);
+    if(isSmartphone){
+        leftText.innerHTML = "あなた " + `${currentBoard.countPieces(PLAYER_CHAR)}コマ` + "<br>"  + `${PLAYER_TIME_MIN}:${PLAYER_TIME_SEC.toString().padStart(2,'0')}` ;
+        rightText.innerHTML = `${currentBoard.countPieces(AI_CHAR)}コマ` + " わたし<br>" + `${AI_TIME_MIN}:${AI_TIME_SEC.toString().padStart(2,'0')}`;
+    }else{
+        leftText.innerHTML = "あなた<br>" + `${PLAYER_TIME_MIN}:${PLAYER_TIME_SEC.toString().padStart(2,'0')}` + "<br>" + `${currentBoard.countPieces(PLAYER_CHAR)}コマ`;
+        rightText.innerHTML = "わたし<br>" + `${AI_TIME_MIN}:${AI_TIME_SEC.toString().padStart(2,'0')}` + "<br>" + `${currentBoard.countPieces(AI_CHAR)}コマ`;
+    }
+    
     leftText.style.color = PLAYER_CHAR === '*' ? "black" : "white";
-    rightText.innerText = "わたし"
     rightText.style.color = AI_CHAR === '*' ? "black" : "white";
 }
 
@@ -502,9 +817,12 @@ function insertFace(face = "normal"){
     const img = document.getElementById("face");
     const isSmartphone = window.innerWidth <= 800;
     if(isSmartphone){
+        img.style.left = (window.innerWidth - img.width) / 2 + "px";
         img.src = `face/${face}-short.jpg`;
     }else{
+        const board = document.getElementById("board");
         img.src = `face/${face}.jpg`;
+        img.style.right = (window.innerWidth - img.width - board.width) / 2 + "px";
     }
     renderInsideInfo();
 }
@@ -516,22 +834,26 @@ function playSound(id){
 }
 
 function playVoice(voiceList){
-    const index = Brain.randomSelect(voiceList);
+    const index = Math.floor(Math.random() * voiceList.length);
     playSound(voiceList[index]);
 }
-
-let currentBoard = new Board();
-let AI_THINKING = false;
-let AI_LIST = [];
-let AI_LIST_SIZE = -1;
-let ITERATE_AI = false;
 
 let AI_CHAR = 'o';
 let PLAYER_CHAR = '*';
 
-let RATE = 0.5;
+let currentBoard = new Board();
+let HEAD = new Nord(currentBoard, PLAYER_CHAR);
 
 let CALL_ENDGAME = false;
+
+let AI_THINKING = false;
+
+let PLAYER_TIME = 20 * 1000 * 60;
+let AI_TIME     = 20 * 1000 * 60;
+let AI_TIME_LIMIT = DIFFICULTY_CONST * 1000 / 2;
+let DEEP_THINK = 1;
+let SECRET_THINKING = DIFFICULTY_CONST * 100; // 20 * DIFFICULTY_CONST * 100 = DIFFICULTY_CONST s of secret thinking
+let lastTimestamp = null;
 
 function frameUpdate(){
     if(CALL_ENDGAME){
@@ -539,110 +861,115 @@ function frameUpdate(){
         gameEnded();
         currentBoard = updateBoard(currentBoard);
         AI_THINKING = false;
+        AI_GOT_ANSWER = false;
         return;
     }else if(AI_THINKING){
-        allFinished = true;
-        if(ITERATE_AI && AI_LIST.length == AI_LIST_SIZE){
-            ITERATE_AI = false;
-            let average_score = AI_LIST.map(x => x[4]/(x[5] || 1)).reduce((a,b) => a + b, 0) / AI_LIST.length;
-            for(let i = 0;i < AI_LIST.length; i++){
-                let item = AI_LIST[i];
-                if(item[5] < DIFFICULTY){
-                    allFinished = false;
-                    setTimeout(() => {
-                        const r = item[0];
-                        const c = item[1];
-                        const opp_list = item[2];
-                        const board = item[3];
-                        //const score = item[4];
-                        const TRIAL_N=Math.ceil(DIFFICULTY/4);
-                        const spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
-                        for(let n = 0;n < TRIAL_N; n++){
-                            if(opp_list.length === 0) break;
-                            const tuple = opp_list[Brain.rouletteSelect(opp_list)];
-                            const r2 = tuple[0];
-                            const c2 = tuple[1];
-                            //const prob = tuple[2];
-                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2,spaces);
-                        }
-                        item[5] += TRIAL_N;
-                        AI_LIST[i] = item;
-                        ITERATE_AI = true;
-                    }, 10);
+        HEAD.think(200); //think for 100 ms per frame
+        r_c_score_list = [];
+        for(const [r,c,child] of HEAD.list){
+            if(child){
+                if(child.isWinGaranteed()){
+                    r_c_score_list.push([r,c,Number.POSITIVE_INFINITY]);
+                    AI_TIME_LIMIT = 0; // stop thinking
                 }else{
-                    let TRIAL_N=  Math.ceil(DIFFICULTY/8);
-                    const score = item[4]/(item[5] || 1);
-                    if(score >= average_score && item[5] < 8*DIFFICULTY){
-                        TRIAL_N = Math.ceil(DIFFICULTY/4);
-                        allFinished = false;
-                    }else if(score < average_score && item[5] < 2*DIFFICULTY){
-                        TRIAL_N = Math.ceil(DIFFICULTY/8);
-                        allFinished = false;
-                    }else{
-                        continue;
+                    r_c_score_list.push([r,c,10*child.score]);
+                }
+                
+            }
+        }
+        
+        const d = new Date();
+        const currentTimestamp = d.getTime();
+        AI_TIME_LIMIT -= currentTimestamp - lastTimestamp;
+        AI_TIME -= currentTimestamp - lastTimestamp;
+        lastTimestamp = currentTimestamp;
+
+        if(AI_TIME_LIMIT > 0 && !HEAD.searched){
+            currentBoard.setList(r_c_score_list, AI_CHAR, true);
+            playSound("kyupi");
+            currentBoard = updateBoard(currentBoard);
+            //renderInsideInfo();
+        }else{
+            currentBoard.render = null;
+            currentBoard.renderColor = null;
+            AI_THINKING = false;
+            r_c_score_list = [];
+            let SCORE = Number.NaN;
+            max_index = -1;
+            AI_TIME_LIMIT = DIFFICULTY_CONST * 1000;
+            if(HEAD.isWinGaranteed()){
+                SCORE = Number.POSITIVE_INFINITY;
+                for(index = 0; index < HEAD.list.length; index++){
+                    const [r,c,child] = HEAD.list[index];
+                    if(child !== null && child.isWinGaranteed()){
+                        max_index = index;
+                        SCORE = Number.POSITIVE_INFINITY;
+                        break;
                     }
-                    setTimeout(() => {
-                        const r = item[0];
-                        const c = item[1];
-                        const opp_list = item[2];
-                        const board = item[3];
-                        const spaces = 64 - (board.countPieces('o') + board.countPieces('*'));
-                        for(let n = 0;n < TRIAL_N; n++){
-                            if(opp_list.length === 0) break;
-                            const tuple = opp_list[Brain.rouletteSelect(opp_list)];
-                            const r2 = tuple[0];
-                            const c2 = tuple[1];
-                            //const prob = tuple[2];
-                            item[4] -= Brain.__think(board.duplicate(), AI_CHAR === 'o' ? '*' : 'o', r2, c2,spaces);
-                        }
-                        item[5] += TRIAL_N;
-                        AI_LIST[i] = item;
-                        ITERATE_AI = true;
-                    }, 10);                    
                 }
             }
-            r_c_score_list = AI_LIST.map(x => [x[0], x[1], 10*x[4]/(x[5] || 1)]);
-            playSound("kyupi");
-            currentBoard.setList(r_c_score_list, AI_CHAR, true);
-            if(allFinished && AI_LIST.length > 0){
-                currentBoard.render = null;
-                currentBoard.renderColor = null;
-                console.log(AI_LIST);
-                r_c_score_list = AI_LIST.map(x => [x[0], x[1], x[4]/(x[5] || 1)]);
-                r_c_score_list.sort((a, b) => b[2] - a[2]);
-                RATE = r_c_score_list.filter(x => x[2] > 0).length / r_c_score_list.length;
-                const [r, c, score] = r_c_score_list[0];
-                console.log(score);
-                currentBoard.put(r, c, AI_CHAR);
-                playSound("pon");
-                
-                if(currentBoard.isGameOver()){
-                    CALL_ENDGAME = true;
-                    currentBoard = updateBoard(currentBoard);
-                    AI_THINKING = false;
-                    return;
+            if(max_index < 0){
+                SCORE = Number.NEGATIVE_INFINITY;
+                for(index = 0; index < HEAD.list.length; index++){
+                    const [r,c,child] = HEAD.list[index];
+                    r_c_score_list.push([r,c,10*child.score]);
+                    if(child.isWinGaranteed()){
+                        SCORE = 1.0;
+                        max_index = index;
+                        break;
+                    }
+                    if(child.score > SCORE){
+                        SCORE = child.score;
+                        max_index = index;
+                    }
                 }
-                if(currentBoard.isPuttable(PLAYER_CHAR)){
-                    AI_THINKING = false;
-                    currentBoard.setList(Brain.getList(currentBoard, PLAYER_CHAR), PLAYER_CHAR, false);
-                }else{
-                    AI_THINKING = true;
-                    playSound("noMove");
-                    Brain.think(currentBoard, AI_CHAR);
-                    currentBoard.setList(Brain.getList(currentBoard, AI_CHAR), AI_CHAR, true);
-                    return;
-                }
-                if(currentBoard.countPieces('*') + currentBoard.countPieces('o') > 5 && AI_LIST_SIZE != 1){
-                    if(score >= 0.5){
+            }
+            if( ! HEAD.list[max_index][2].searched 
+                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*100 // only deep think when the subtree is small
+                && DEEP_THINK > 0       // only deep think once per turn
+                && HEAD.depth > 18 // do not deep think in early game
+            ){
+                // continue thinking. This is allowed only once per turn.
+                AI_THINKING = true;
+                AI_TIME_LIMIT = DIFFICULTY_CONST * 1000;
+                playVoice(VOICE_ID_THINKING);
+                DEEP_THINK -= 1;
+                return;
+            }
+            console.log(JSON.parse(JSON.stringify(HEAD)));
+            DEEP_THINK = 1; // reset deep think allowance for next turn
+            const r = HEAD.list[max_index][0];
+            const c = HEAD.list[max_index][1];
+            currentBoard.put(r, c, AI_CHAR);
+            playSound("pon");
+            console.log(r,c,":",SCORE, RATE,HEAD.list[max_index][2].n_descendant);
+            HEAD = HEAD.list[max_index][2];
+            if(currentBoard.isGameOver()){
+                CALL_ENDGAME = true;
+                currentBoard = updateBoard(currentBoard);
+                AI_THINKING = false;
+                return;
+            }
+
+            if(currentBoard.isPuttable(PLAYER_CHAR)){
+                AI_THINKING = false;
+                const d = new Date();
+                lastTimestamp = d.getTime();
+                //HEAD.board.print2Console();
+                currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
+                SECRET_THINKING = 100;
+                SCORE = HEAD.depth / 64;
+                if(HEAD.depth > 6){
+                    if(SCORE >= 0.9){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
-                    } else if(score < -0.5){
+                    } else if(SCORE < -0.5){
                         insertFace("cry");
                         playVoice(VOICE_ID_PUT_CRYING);
-                    } else if(score > 1.0){
+                    } else if(SCORE > 0.5){
                         insertFace("smile");
                         playVoice(VOICE_ID_PUT_WINNING);
-                    } else if(score < -0.0){
+                    } else if(SCORE < -0.1){
                         insertFace("confused");
                         playVoice(VOICE_ID_PUT_LOSING);
                     } else {
@@ -650,17 +977,47 @@ function frameUpdate(){
                         playVoice(VOICE_ID_PUT_NORMAL);
                     }
                 }
-                currentBoard = updateBoard(currentBoard);
-                drawCircleAt(r, c, "red", 0.5);
             }else{
-                currentBoard = updateBoard(currentBoard);
+                AI_THINKING = true;
+                playSound("noMove");
             }
             
+            currentBoard = updateBoard(currentBoard);
+            renderInsideInfo();
+            drawCircleAt(r, c, "red", 0.5);
         }
+    }else if(lastTimestamp != null){
+        //player is thinking
+        const d = new Date();
+        const currentTimestamp = d.getTime();
+        PLAYER_TIME -= currentTimestamp - lastTimestamp;
+        lastTimestamp = currentTimestamp;
+        if(PLAYER_TIME <= 0){
+            gameEnded(true);
+            AI_THINKING = false;
+            return;
+        }
+        // secretly let AI think in the background
+        if(SECRET_THINKING > 0 && currentTimestamp % 2 === 0){
+            HEAD.think(20, true);
+            //HEAD.calculateScore();
+            console.log("secretly thinking...");
+            SECRET_THINKING -= 1;
+        }
+        renderInsideInfo();
     }
 }
 
-function gameEnded(){
+function gameEnded(timeUp = false){
+    renderInsideInfo();
+    
+    if(timeUp){
+        insertFace("confused");
+        playSound("lose");
+        alert("Time Up!!\nあなたの負けです...");
+        lastTimestamp = null;
+        return;
+    }
     const pCount = currentBoard.countPieces(PLAYER_CHAR);
     const aiCount = currentBoard.countPieces(AI_CHAR);
     let result = '';
@@ -677,15 +1034,13 @@ function gameEnded(){
         playSound("win");
     }
     alert(`Game Over!!\nわたしのスコア: ${aiCount}\nあなたのスコア: ${pCount}\n${result}`);
+    lastTimestamp = null;
 }
 
 function playerInput(event) {
-    const isSmartphone = window.innerWidth <= 800;
-    const WINDOW_WIDTH = window.innerWidth;
     const board = document.getElementById("board");
     const rect = document.getElementById("cell-0-0").getBoundingClientRect();
-    const CELL_SIZE = isSmartphone ? Math.floor(WINDOW_WIDTH * 0.80 / 8) : Math.floor(WINDOW_WIDTH * 0.50 / 8);
-    console.log(CELL_SIZE);
+    const CELL_SIZE = getCellSize();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     const c = Math.floor(x / CELL_SIZE);
@@ -701,17 +1056,29 @@ function playerInput(event) {
         playSound("kako");
         currentBoard = newBoard;
         currentBoard = updateBoard(currentBoard);
+        HEAD.think(10,true); // this is to avoid null 
+        let tmp = HEAD.list.find(x => x[0] === r && x[1] === c)[2];
+        if(tmp === null){
+            console.log("This must not be happning...");
+            HEAD.board.print2Console();
+            console.log(JSON.parse(JSON.stringify(HEAD)));
+        }
+        HEAD = tmp;
         if(currentBoard.isGameOver()){
             CALL_ENDGAME = true;
             return;
         }
         if(currentBoard.isPuttable(AI_CHAR)){
             AI_THINKING = true;
-            Brain.think(currentBoard, AI_CHAR);
-            
+            const d = new Date();
+            const currentTimestamp = d.getTime();
+            if(lastTimestamp != null){
+                PLAYER_TIME -= (currentTimestamp - (lastTimestamp || currentTimestamp));
+            }
+            lastTimestamp = currentTimestamp;
         }else{
             console.log("Opponent has no moves, your turn again.");
-            currentBoard.setList(Brain.getList(currentBoard, PLAYER_CHAR), PLAYER_CHAR, false);
+            currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
             currentBoard = updateBoard(currentBoard);
         }
     } else {
@@ -720,32 +1087,42 @@ function playerInput(event) {
     }
 }
 
+
 function startGame(playerChar){
     PLAYER_CHAR = playerChar;
     AI_CHAR = playerChar === 'o' ? '*' : 'o';
     insertFace("normal");
     playVoice(VOICE_ID_START);
     currentBoard = new Board();
+    HEAD = new Nord(currentBoard, '*');
+    AI_TIME    = 20 * 1000 * 60;
+    PLAYER_TIME= 20 * 1000 * 60;
+    const d = new Date();
+    lastTimestamp = d.getTime();
+    RATE = 0.5;
     if(AI_CHAR === '*'){
         AI_THINKING = true;
-        Brain.think(currentBoard, AI_CHAR);
     }else{
-        currentBoard.setList(Brain.getList(currentBoard, PLAYER_CHAR), PLAYER_CHAR, false);
+        currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
+        HEAD.think(10,true);
     }
     currentBoard = updateBoard(currentBoard);
+    renderInsideInfo();
 }
 
 window.onload = function() {
-    currentBoard.setList(Brain.getList(currentBoard, PLAYER_CHAR), PLAYER_CHAR, false);
-    console.log(currentBoard);
+    startGame('*');
+    lastTimestamp = null;
+
     const board = document.getElementById("board");
     board.addEventListener("click", playerInput);
-    setInterval(frameUpdate, 100);
+    setInterval(frameUpdate, 33);
     document.getElementById("bgm").volume = 0.3;
     insertFace("normal");
-    renderInsideInfo();
     currentBoard = updateBoard(currentBoard);
-    document.getElementById("versionDiv").innerHTML = "Version 0.3<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
+    renderInsideInfo();
+    document.getElementById("versionDiv").innerHTML = "Version 0.5<br> Voice by White CUL<br> Illustration by Grok<br> Sound effect by 効果音ラボ";
+    
 };
 
 window.onresize = function() {
