@@ -82,23 +82,8 @@ class Board{
         }
         return n_next_moves;
     }
-    score(player){
-        const opponent = player === 'o' ? '*' : 'o';
-        const player_next_move = this.calculate_n_next_moves(player);
-        const opponent_next_move = this.calculate_n_next_moves(opponent);
-        const n_my_pieces = this.countPieces(player);
-        const n_opponent_pieces = this.countPieces(opponent);
-        if(player_next_move === 0 && opponent_next_move === 0){
-            const result = n_my_pieces - n_opponent_pieces;
-            if(result > 0){
-                return 100;
-            }else if(result < 0){
-                return -100;
-            }else{
-                return 0.1;
-            }
-        }
-        let result = 0;
+    _calculate_edgeScore(player){
+        let edge_score = 0;
         const yosumi_char = [this._get(0,0), this._get(0,7), this._get(7,7), this._get(7,0)];
         const lines = [
             {coords: i => [0, i], cornerIdx: 0},
@@ -110,6 +95,8 @@ class Board{
             {coords: i => [7, i], cornerIdx: 3},
             {coords: i => [7-i, 0], cornerIdx: 3},
         ];
+        let self_score = 0;
+        let opponent_score = 0;
         for (const {coords, cornerIdx} of lines) {
             const corner = yosumi_char[cornerIdx];
             for (let i = 0; i < 8; i++) {
@@ -118,18 +105,77 @@ class Board{
                 if (v === ' ' || v !== corner){
                     break;
                 }
-                result += (v === player ? 0.4 : -0.4) * (8 - i) / 8;
+                if(v === player){
+                    self_score += (8 - i) / 8;
+                }else{
+                    opponent_score += (8 - i) / 8;
+                }
             }
         }
-        const depth = n_my_pieces + n_opponent_pieces;
-        if(n_my_pieces + n_opponent_pieces >= 58){
-            //late game
-            result += Math.log10((n_my_pieces + 1) / (n_opponent_pieces + 1));
-        }else{
-            //const factor = 0.8*Math.exp(-depth*depth / (32*32));
-            result += Math.log10((player_next_move + 1) / (opponent_next_move + 1));
+        let result =  Math.log10((self_score + 1) / (opponent_score + 1));
+        if(isNaN(result)){
+            console.log("NaN detected in _calculate_edgeScore");
         }
         return result;
+    }
+    _score(player){
+        return [this.calculate_n_next_moves(player),this._calculate_edgeScore(player)];
+    }
+    score(player){
+        const opponent = player === 'o' ? '*' : 'o';
+        let isGameFinished = true;
+        let least_opponent_n_next_moves = 420;
+        let least_opponent_edge_score = 420*420;
+        let n_next_moves = 0;
+        let n_my_pieces = 0;
+        for(let r=0; r<8; r++){
+            for(let c=0; c<8; c++){
+                const piece = this._get(r,c);
+                if(piece === ' '){
+                    if(this.put(r,c,player,false)){
+                        isGameFinished = false;
+                        n_next_moves += 1;
+                        const newBoard = this.duplicate();
+                        newBoard.put(r,c,player);
+                        const [opponent_n_next_moves, opponent_edge_score] = newBoard._score(opponent);
+                        if(opponent_n_next_moves < least_opponent_n_next_moves){
+                            least_opponent_n_next_moves = opponent_n_next_moves;
+                        }
+                        if(opponent_edge_score < least_opponent_edge_score){
+                            least_opponent_edge_score = opponent_edge_score;
+                        }
+                    }else if(isGameFinished){
+                        if(this.put(r,c,opponent,false)){
+                            isGameFinished = false;
+                        }
+                    }
+                }else if(piece === player){
+                    n_my_pieces += 1;
+                }
+            }
+        }
+
+        if(isGameFinished){
+            const n_opponent_pieces = this.countPieces(opponent);
+            if(n_my_pieces > n_opponent_pieces){
+                return 10;
+            }else if(n_my_pieces < n_opponent_pieces){
+                return -10;
+            }else{
+                return -0.1;
+            }
+        }
+        if(n_next_moves === 0){
+            // player has to pass.
+            return -this.score(opponent);
+        }
+        let score_next_moves = Math.log10((n_next_moves + 1) / (least_opponent_n_next_moves + 1));
+        const bunshi = (this._calculate_edgeScore(player) + 0.001);
+        const retval =  0.1*score_next_moves + 0.9*least_opponent_edge_score;
+        if(isNaN(retval)){
+            console.log("NaN detected in score()");
+        }
+        return retval;
     }
     print2Console(){
         for(let r=0; r<8; r++){
@@ -189,7 +235,7 @@ class Board{
     }
 };
 
-class Nord{
+class Node{
     
     constructor(board, player,depth = -1){
         this.board = board;
@@ -216,7 +262,7 @@ class Nord{
             }
             this.searched = true;
             this.n_descendant = 1;
-            this.winGaranteed = this.score > 0;
+            this.winGuaranteed = this.score > 0;
         }else{
             this.list = this.getList();
             this.estimated_score = new Array(this.list.length).fill(0);
@@ -225,7 +271,13 @@ class Nord{
                 let [r,c,child] = this.list[index];
                 const newBoard = this.board.duplicate();
                 newBoard.put(r,c,this.player);
-                this.estimated_score[index] = newBoard.score(AI_CHAR);
+                this.estimated_score[index] = newBoard.score(next_player);
+                this.estimated_score[index] *= this.player === AI_CHAR ? 1 : -1;
+                if(isNaN(this.estimated_score[index])){
+                    this.board.print2Console();
+                    console.log("NaN detected in estimated_score");
+                    newBoard.print2Console();
+                }
             }
         }
         
@@ -293,7 +345,7 @@ class Nord{
             //this happens frequently in early game
             return scores[0][1];
         }
-        return Nord.rouletteSelect(Nord.normalizeList(scores));
+        return Node.rouletteSelect(Node.normalizeList(scores));
     }
     minimaxSelect(){
         let best_score = this.player === AI_CHAR ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
@@ -362,9 +414,9 @@ class Nord{
                 const newBoard = this.board.duplicate();
                 newBoard.put(r,c,this.player);
                 if(newBoard.isPuttable(next_player)){
-                    child = new Nord(newBoard, next_player,this.depth + 1);
+                    child = new Node(newBoard, next_player,this.depth + 1);
                 }else{
-                    child = new Nord(newBoard, this.player,this.depth + 1);
+                    child = new Node(newBoard, this.player,this.depth + 1);
                 }
                 this.list[chosen_index][2] = child;
                 child.newBorn = true;
@@ -380,7 +432,7 @@ class Nord{
         return selected_child;
     }
     calculateScore(){
-        let decisive = this.isWinGaranteed();
+        let decisive = this.iswinGuaranteed();
         if(decisive !== undefined){
             if(decisive){
                 return this.score = 10;
@@ -442,7 +494,7 @@ class Nord{
     
     _think(number_of_new_born,all_search_depth = 0){
         if(this.searched){
-            this.isWinGaranteed();
+            this.iswinGuaranteed();
             return 0;
         }else if(number_of_new_born <= 0){
             this.calculateScore();
@@ -483,14 +535,14 @@ class Nord{
                         break;
                     }      
                 }
-                if(chosen_child.searched || chosen_child.isWinGaranteed() !== undefined){
+                if(chosen_child.searched || chosen_child.iswinGuaranteed() !== undefined){
                     if(chosen_child.newBorn){
                         // this child is probably the child at the end of the game
                         n_new_born_child += 1;
                         chosen_child.calculateScore();
                         break;
                     }
-                }else if(chosen_child.isWinGaranteed()){
+                }else if(chosen_child.iswinGuaranteed()){
                     // this path does not need further search
                     break;
                 }
@@ -506,7 +558,7 @@ class Nord{
         return n_new_born_child;
     }
     think(remTimeMs = 100,secretMode=false){
-        if(this.isWinGaranteed() !== undefined){
+        if(this.iswinGuaranteed() !== undefined){
             return;
         }
         const startTime = Date.now();
@@ -538,7 +590,7 @@ class Nord{
                 if(child.searched){
                     child.calculateScore();
                     continue;
-                }else if(child.isWinGaranteed()){
+                }else if(child.iswinGuaranteed()){
                     break;
                 }
                 child._think(1);
@@ -555,12 +607,12 @@ class Nord{
         this.calculateScore();
         
     }
-    isWinGaranteed(){
-        if(this.winGaranteed !== undefined){
-            return this.winGaranteed;
+    iswinGuaranteed(){
+        if(this.winGuaranteed !== undefined){
+            return this.winGuaranteed;
         }
-        this.winGaranteed = undefined;
-        let allChildrenAreWinGuaranteed = true;
+        this.winGuaranteed = undefined;
+        let allChildrenAreWinGuaranteed = this.player == AI_CHAR ? false : true;
         let all_null = true;
         this.searched = true;
         for(let [r,c,child] of this.list){
@@ -573,34 +625,31 @@ class Nord{
                 allChildrenAreWinGuaranteed = false;
             }
             all_null = false;
-            let result = child.isWinGaranteed();
+            let result = child.iswinGuaranteed();
             if(result !== undefined){
                 if(this.player === AI_CHAR){
+                    allChildrenAreWinGuaranteed = false;
                     if(result){
-                        this.winGaranteed = true;
+                        this.winGuaranteed = true;
                         this.searched = true;
                         this.score = 10;
                         return true;
                     }
-                }else{
-                    if(result == false){
-                        allChildrenAreWinGuaranteed = false;
-                    }
                 }
             }else{
-                if(this.player == PLAYER_CHAR){
+                if(this.player === PLAYER_CHAR && !result){
                     allChildrenAreWinGuaranteed = false;
                 }
             }
         }
         if(all_null){
-            this.winGaranteed = undefined;
-            return this.winGaranteed;
+            this.winGuaranteed = undefined;
+            return this.winGuaranteed;
         }else if(allChildrenAreWinGuaranteed){
-            this.winGaranteed = true;
+            this.winGuaranteed = true;
             this.searched = true;
         }
-        return this.winGaranteed;
+        return this.winGuaranteed;
     }
 
 }
@@ -815,7 +864,7 @@ let AI_CHAR = 'o';
 let PLAYER_CHAR = '*';
 
 let currentBoard = new Board();
-let HEAD = new Nord(currentBoard, PLAYER_CHAR);
+let HEAD = new Node(currentBoard, PLAYER_CHAR);
 
 let CALL_ENDGAME = false;
 
@@ -841,7 +890,7 @@ function frameUpdate(){
         r_c_score_list = [];
         for(const [r,c,child] of HEAD.list){
             if(child){
-                if(child.isWinGaranteed()){
+                if(child.iswinGuaranteed()){
                     r_c_score_list.push([r,c,Number.POSITIVE_INFINITY]);
                     AI_TIME_LIMIT = 0; // stop thinking
                 }else{
@@ -870,11 +919,11 @@ function frameUpdate(){
             let SCORE = Number.NaN;
             max_index = -1;
             AI_TIME_LIMIT = DIFFICULTY_CONST * 1000;
-            if(HEAD.isWinGaranteed()){
+            if(HEAD.iswinGuaranteed()){
                 SCORE = Number.POSITIVE_INFINITY;
                 for(index = 0; index < HEAD.list.length; index++){
                     const [r,c,child] = HEAD.list[index];
-                    if(child !== null && child.isWinGaranteed()){
+                    if(child !== null && child.iswinGuaranteed()){
                         max_index = index;
                         SCORE = 10;
                         break;
@@ -886,7 +935,7 @@ function frameUpdate(){
                 for(index = 0; index < HEAD.list.length; index++){
                     const [r,c,child] = HEAD.list[index];
                     r_c_score_list.push([r,c,10*child.score]);
-                    if(child.isWinGaranteed()){
+                    if(child.iswinGuaranteed()){
                         SCORE = 10.0;
                         max_index = index;
                         break;
@@ -1067,7 +1116,7 @@ function startGame(playerChar){
     insertFace("normal");
     playVoice(VOICE_ID_START);
     currentBoard = new Board();
-    HEAD = new Nord(currentBoard, '*');
+    HEAD = new Node(currentBoard, '*');
     AI_TIME    = 20 * 1000 * 60;
     PLAYER_TIME= 20 * 1000 * 60;
     const d = new Date();
