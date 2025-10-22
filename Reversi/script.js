@@ -990,7 +990,7 @@ function frameUpdate(){
                 DEEP_THINK -= 1;
                 return;
             }
-            console.log(JSON.parse(JSON.stringify(HEAD)));
+            //console.log(JSON.parse(JSON.stringify(HEAD)));
             DEEP_THINK = 1; // reset deep think allowance for next turn
             const r = HEAD.list[max_index][0];
             const c = HEAD.list[max_index][1];
