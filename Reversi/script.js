@@ -525,6 +525,10 @@ class Node{
             const number_of_new_born_for_children = n_null_children !== 0 ? Math.floor(number_of_new_born / n_null_children) : Math.floor(number_of_new_born/this.list.length);
             while(n_null_children > 0){
                 let a_child = this.get_a_child(true);
+                if(a_child === null){
+                    //already fully searched
+                    return n_new_born_child;
+                }
                 n_new_born_child += 1;
                 if(a_child.gameFinished === 0){
                     // game is not finished, think further
@@ -589,10 +593,9 @@ class Node{
         }
         const startTime = Date.now();
         // this will ensure that all children are evaluated at least once
-         // make sure all children are born
+        this._think(4,1);
         if(this.depth == 4){
             let child;
-            this._think(4,2);
             for(let index = 0; index < this.list.length; index++){
                 let [r,c,_child] = this.list[index];
                 if(r !== 4 && c !== 5){
@@ -607,7 +610,14 @@ class Node{
         }
         while (Date.now() - startTime < remTimeMs ) {
             let child = this.get_a_child(true);
-            child._think(8);
+            if(child !== null){
+                child._think(4);
+            }else{
+                console.log("No child to think in main think()");
+                console.log(this);
+                alert("Error: No child to think in main think()");
+                break;
+            }
             
             for(let i = 0;i < this.list.length;i++){
                 let [r,c,_child] = this.list[i];
@@ -621,12 +631,8 @@ class Node{
             if(this.iswinGuaranteed()){
                 break;
             }
-            if(child.iswinGuaranteed()){
-                break;
-            }
         }
         this.calculateScore();
-        
     }
     iswinGuaranteed(){
         if(this.winGuaranteed !== undefined){
@@ -1164,7 +1170,7 @@ window.onload = function() {
 
     const board = document.getElementById("board");
     board.addEventListener("click", playerInput);
-    setInterval(frameUpdate, 33);
+    setInterval(frameUpdate, 100);
     document.getElementById("bgm").volume = 0.3;
     insertFace("normal");
     currentBoard = updateBoard(currentBoard);
