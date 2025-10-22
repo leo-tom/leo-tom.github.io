@@ -86,33 +86,64 @@ class Board{
         let edge_score = 0;
         const yosumi_char = [this._get(0,0), this._get(0,7), this._get(7,7), this._get(7,0)];
         const lines = [
-            {coords: i => [0, i], cornerIdx: 0},
-            {coords: i => [i, 0], cornerIdx: 0},
-            {coords: i => [i, 7], cornerIdx: 1},
-            {coords: i => [0, 7-i], cornerIdx: 1},
-            {coords: i => [7-i, 7], cornerIdx: 2},
-            {coords: i => [7, 7-i], cornerIdx: 2},
-            {coords: i => [7, i], cornerIdx: 3},
-            {coords: i => [7-i, 0], cornerIdx: 3},
+            {direction: [-1, 1], inc_r:1, inc_c:0, cornerIdx: 0, r: 0, c:0},
+            {direction: [1, -1], inc_r:0, inc_c:1, cornerIdx: 0, r: 0, c:0},
+            {direction: [1, 1], inc_r:0, inc_c:-1, cornerIdx: 1, r: 0, c:7},
+            {direction: [-1, -1], inc_r:1, inc_c:0, cornerIdx: 1, r: 0, c:7},
+            {direction: [1, -1], inc_r:-1, inc_c:0, cornerIdx: 2, r: 7, c:7},
+            {direction: [1, 1], inc_r:0, inc_c:-1, cornerIdx: 2, r: 7, c:7},
+            {direction: [-1, 1], inc_r:-1, inc_c:0, cornerIdx: 3, r: 7, c:0},
+            {direction: [1, -1], inc_r:0, inc_c:1, cornerIdx: 3, r: 7, c:0},
         ];
-        let self_score = 0;
-        let opponent_score = 0;
-        for (const {coords, cornerIdx} of lines) {
-            const corner = yosumi_char[cornerIdx];
-            for (let i = 0; i < 8; i++) {
-                const [r, c] = coords(i);
-                const v = this._get(r, c);
-                if (v === ' ' || v !== corner){
-                    break;
-                }
-                if(v === player){
-                    self_score += (8 - i) / 8;
-                }else{
-                    opponent_score += (8 - i) / 8;
-                }
+        const opponent = player === '*' ? 'o' : '*';
+        let twodArray_self = Array(8).fill().map(     () => Array(8).fill(false));
+        let twodArray_opponent = Array(8).fill().map( () => Array(8).fill(false));
+        for (const whatToCheck of lines) {
+            const cornerChar = yosumi_char[whatToCheck.cornerIdx];
+            if(cornerChar == ' '){
+            	continue;
+            }
+            const [dr,dc] = whatToCheck.direction;
+            let br = whatToCheck.r;
+            let bc = whatToCheck.c;
+            while(br >= 0 && br < 8 && bc >= 0 && bc < 8){
+            	let r = br;
+            	let c = bc;
+            	if(this._get(r,c) !== cornerChar){
+            		break;
+            	}
+            	while(r >= 0 && r < 8 && c >= 0 && c < 8){
+			const val = this._get(r,c);
+		    	if(val === cornerChar){
+		    		if(cornerChar === player){
+		    			twodArray_self[r][c] = true;
+		    		}else{
+		    			twodArray_opponent[r][c] = true;
+		    		}
+		    	}else{
+		    		break;
+		    	}
+		    	r += dr;
+		    	c += dc;
+		}
+		br += whatToCheck.inc_r;
+		bc += whatToCheck.inc_c;
             }
         }
-        let result =  Math.log10((self_score + 1) / (opponent_score + 1));
+        let self_score = 0;
+        let opponent_score = 0;
+        for(let r = 0;r < 8;r++){
+        	for(let c = 0; c < 8;c++){
+			if(twodArray_self[r][c]){
+				self_score++;
+			}
+			if(twodArray_opponent[r][c]){
+				opponent_score++;
+			}
+		}
+	}
+        //let result =  Math.log10((self_score + 1) / (opponent_score + 1));
+        let result = self_score  - opponent_score;
         if(isNaN(result)){
             console.log("NaN detected in _calculate_edgeScore");
         }
@@ -126,6 +157,19 @@ class Board{
     }
     score(player){
         const opponent = player === 'o' ? '*' : 'o';
+        if(this.isGameOver()){
+        	let result = this.countPieces(player) - this.countPieces(opponent);
+        	if(result > 0){
+        		return 64;
+        	}else if(result < 0){
+        		return -64;
+        	}else{
+        		return -1;
+        	}
+        }
+        let next_move_score = this.calculate_n_next_moves(player) - this.calculate_n_next_moves(opponent);
+        let edge_score = this._calculate_edgeScore(player) - this._calculate_edgeScore(opponent);
+        return 0.1 * next_move_score  + 0.1* edge_score;
         let isGameFinished = true;
         let opponent_n_next_moves_ave = 0;
         let least_opponent_edge_score = 420*420;
@@ -169,11 +213,11 @@ class Board{
         if(isGameFinished){
             const n_opponent_pieces = this.countPieces(opponent);
             if(n_my_pieces > n_opponent_pieces){
-                return 10;
+                return 64;
             }else if(n_my_pieces < n_opponent_pieces){
-                return -10;
+                return -64;
             }else{
-                return -0.1;
+                return -1;
             }
         }
         if(n_next_moves === 0){
@@ -182,15 +226,11 @@ class Board{
         }
         opponent_n_next_moves_ave /= n_next_moves;
         if(opponent_n_next_moves_ave <= 0){
-            n_next_moves += - opponent_n_next_moves_ave;
-            opponent_n_next_moves_ave = 0.1;
+            return 1;
         }
-        let score_next_moves = Math.log10((n_next_moves + 1) / (opponent_n_next_moves_ave + 1));
-        if(!isFinite(score_next_moves)){
-            score_next_moves = Math.log10((n_next_moves + 1) / (opponent_n_next_moves_ave + 0.1));
-        }
+        let score_next_moves = n_next_moves - opponent_n_next_moves_ave;
         const bunshi = (this._calculate_edgeScore(player) + 0.001);
-        const retval =  score_next_moves + least_opponent_edge_score;
+        const retval =  0.1*score_next_moves + 0.15*least_opponent_edge_score;
         if(isNaN(retval)){
             console.log("NaN detected in score()");
         }
@@ -291,7 +331,7 @@ class Node{
                 const newBoard = this.board.duplicate();
                 newBoard.put(r,c,this.player);
                 this.estimated_score[index] = newBoard.score(next_player);
-                this.estimated_score[index] *= this.player === AI_CHAR ? 1 : -1;
+                this.estimated_score[index] *= this.player === AI_CHAR ? -1 : 1;
                 if(isNaN(this.estimated_score[index])){
                     this.board.print2Console();
                     console.log("NaN detected in estimated_score");
@@ -454,9 +494,9 @@ class Node{
         let decisive = this.iswinGuaranteed();
         if(decisive !== undefined){
             if(decisive){
-                return this.score = 10;
+                return this.score = 64;
             }else{
-                return this.score = -10;
+                return this.score = -64;
             }
         }
 
@@ -478,7 +518,7 @@ class Node{
                         likely_to_be_chosen_index = index;
                     }
                 }
-                //this.score += this.estimated_score[index] / this.list.length;
+                this.score += this.estimated_score[index] / this.list.length;
             }
         }else{
             for(let index = 0; index < this.list.length; index++){
@@ -500,7 +540,14 @@ class Node{
                     //this.score += child.score * child.n_descendant / this.n_descendant;
                 }
             }
+            for(let index = 0; index < this.list.length; index++){
+                let [r,c,child] = this.list[index];
+                if(child){
+                	this.score += child.score * child.n_descendant / this.n_descendant;
+                }
+            }
         }
+        return this.score;
         // assign child's score
         this.score = likely_to_be_chosen;// + this.board.score(AI_CHAR);
         //if(this.score > 1){
@@ -541,9 +588,9 @@ class Node{
                 //let chosen_child = Math.random() < 1/3 ? this.get_a_child() : this.minimaxSelect();
                 let chosen_child = null;
                 if(this.player === AI_CHAR){
-                    chosen_child = Math.random() < 1/8 ? this.get_a_child(true) : this.minimaxSelect();
+                    chosen_child = Math.random() < 8/10 ? this.get_a_child(true) : this.minimaxSelect();
                 }else{
-                    chosen_child = Math.random() < 1/2 ? this.get_a_child(true)  : this.minimaxSelect();
+                    chosen_child = Math.random() < 8/10 ? this.get_a_child(true)  : this.minimaxSelect();
                 }
                 
                 if(chosen_child === null){
@@ -588,7 +635,7 @@ class Node{
         return n_new_born_child;
     }
     think(remTimeMs = 100,secretMode=false){
-        if(this.iswinGuaranteed()){
+        if(this.iswinGuaranteed() || this.isSearched){
             return;
         }
         const startTime = Date.now();
@@ -613,6 +660,10 @@ class Node{
             if(child !== null){
                 child._think(4);
             }else{
+            	this.calculateScore();
+            	if(this.searched){
+            		return;
+            	}
                 console.log("No child to think in main think()");
                 console.log(this);
                 alert("Error: No child to think in main think()");
@@ -793,7 +844,6 @@ function updateBoard(_instance = new Board()) {
     return _instance;
 }
 
-let    DEEPEST_DEPTH = -1;
 function drawCircleAt(r,c, color="yellow",opacity=0.5){
     const board = document.getElementById("board");
     const cell  = document.getElementById(`cell-${r}-${c}`);
@@ -909,6 +959,8 @@ let DEEP_THINK = 1;
 let SECRET_THINKING = DIFFICULTY_CONST * 100; // 20 * DIFFICULTY_CONST * 100 = DIFFICULTY_CONST s of secret thinking
 let lastTimestamp = null;
 
+let DEEPEST_DEPTH = 0;
+
 function frameUpdate(){
     if(CALL_ENDGAME){
         CALL_ENDGAME = false;
@@ -991,11 +1043,12 @@ function frameUpdate(){
                 return;
             }
             //console.log(JSON.parse(JSON.stringify(HEAD)));
-            DEEP_THINK = 1; // reset deep think allowance for next turn
+            DEEP_THINK = 0; // reset deep think allowance for next turn
             const r = HEAD.list[max_index][0];
             const c = HEAD.list[max_index][1];
             currentBoard.put(r, c, AI_CHAR);
             playSound("pon");
+            console.log("depth: ", HEAD.depth);
             console.log(r,c,":",SCORE, RATE,HEAD.list[max_index][2].n_descendant);
             HEAD = HEAD.list[max_index][2];
             if(currentBoard.isGameOver()){
@@ -1162,6 +1215,7 @@ function startGame(playerChar){
     }
     currentBoard = updateBoard(currentBoard);
     renderInsideInfo();
+    DEEPEST_DEPTH = -1;
 }
 
 window.onload = function() {
