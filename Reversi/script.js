@@ -119,12 +119,15 @@ class Board{
         return result;
     }
     _score(player){
+        if(this.isPuttable(player) === false){
+            return this._score(player === 'o' ? '*' : 'o').map(v => -v);
+        }
         return [this.calculate_n_next_moves(player),this._calculate_edgeScore(player)];
     }
     score(player){
         const opponent = player === 'o' ? '*' : 'o';
         let isGameFinished = true;
-        let least_opponent_n_next_moves = 420;
+        let opponent_n_next_moves_ave = 0;
         let least_opponent_edge_score = 420*420;
         let n_next_moves = 0;
         let n_my_pieces = 0;
@@ -137,10 +140,19 @@ class Board{
                         n_next_moves += 1;
                         const newBoard = this.duplicate();
                         newBoard.put(r,c,player);
-                        const [opponent_n_next_moves, opponent_edge_score] = newBoard._score(opponent);
-                        if(opponent_n_next_moves < least_opponent_n_next_moves){
-                            least_opponent_n_next_moves = opponent_n_next_moves;
+                        if(newBoard.isGameOver()){
+                            let n_player_pieces = newBoard.countPieces(PLAYER_CHAR);
+                            let n_ai_pieces = newBoard.countPieces(AI_CHAR);
+                            if(n_player_pieces > n_ai_pieces){
+                                return -10;
+                            }else if(n_player_pieces < n_ai_pieces){
+                                return 10;
+                            }else{
+                                return -1;
+                            }
                         }
+                        const [opponent_n_next_moves, opponent_edge_score] = newBoard._score(opponent);
+                        opponent_n_next_moves_ave += opponent_n_next_moves;
                         if(opponent_edge_score < least_opponent_edge_score){
                             least_opponent_edge_score = opponent_edge_score;
                         }
@@ -154,7 +166,6 @@ class Board{
                 }
             }
         }
-
         if(isGameFinished){
             const n_opponent_pieces = this.countPieces(opponent);
             if(n_my_pieces > n_opponent_pieces){
@@ -169,9 +180,17 @@ class Board{
             // player has to pass.
             return -this.score(opponent);
         }
-        let score_next_moves = Math.log10((n_next_moves + 1) / (least_opponent_n_next_moves + 1));
+        opponent_n_next_moves_ave /= n_next_moves;
+        if(opponent_n_next_moves_ave <= 0){
+            n_next_moves += - opponent_n_next_moves_ave;
+            opponent_n_next_moves_ave = 0.1;
+        }
+        let score_next_moves = Math.log10((n_next_moves + 1) / (opponent_n_next_moves_ave + 1));
+        if(!isFinite(score_next_moves)){
+            score_next_moves = Math.log10((n_next_moves + 1) / (opponent_n_next_moves_ave + 0.1));
+        }
         const bunshi = (this._calculate_edgeScore(player) + 0.001);
-        const retval =  0.1*score_next_moves + 0.9*least_opponent_edge_score;
+        const retval =  score_next_moves + least_opponent_edge_score;
         if(isNaN(retval)){
             console.log("NaN detected in score()");
         }
@@ -491,7 +510,6 @@ class Node{
         //}
         return this.score;
     }
-    
     _think(number_of_new_born,all_search_depth = 0){
         if(this.searched){
             this.iswinGuaranteed();
@@ -519,9 +537,9 @@ class Node{
                 //let chosen_child = Math.random() < 1/3 ? this.get_a_child() : this.minimaxSelect();
                 let chosen_child = null;
                 if(this.player === AI_CHAR){
-                    chosen_child = Math.random() < 1/4 ? this.get_a_child(true) : this.minimaxSelect();
+                    chosen_child = Math.random() < 1/8 ? this.get_a_child(true) : this.minimaxSelect();
                 }else{
-                    chosen_child = this.get_a_child(true) ;//Math.random() < 1/2 ? this.get_a_child()  : this.minimaxSelect();
+                    chosen_child = Math.random() < 1/2 ? this.get_a_child(true)  : this.minimaxSelect();
                 }
                 
                 if(chosen_child === null){
@@ -532,7 +550,8 @@ class Node{
                     chosen_child = this.get_a_child(true);
                     if(chosen_child === null){
                         console.log("Unexpected null child in _think()");
-                        break;
+                        console.log(this);
+                        return 420;
                     }      
                 }
                 if(chosen_child.searched || chosen_child.iswinGuaranteed() !== undefined){
@@ -548,17 +567,24 @@ class Node{
                 }
                 if(chosen_child.newBorn){
                     n_new_born_child += 1;
-                    n_new_born_child += chosen_child._think(number_of_new_born-n_new_born_child);
+                    let remain_new_born = number_of_new_born - n_new_born_child;
+                    let new_born_for_child = Math.floor(remain_new_born / 2);
+                    n_new_born_child += chosen_child._think( new_born_for_child);
                 }else{
-                    n_new_born_child += chosen_child._think(number_of_new_born);
+                    let remain_new_born = number_of_new_born - n_new_born_child;
+                    n_new_born_child += chosen_child._think(remain_new_born);
                 }
             }
+        }
+        if(this.depth > DEEPEST_DEPTH){
+            console.log("Deepest depth reached: " + this.depth);
+            DEEPEST_DEPTH = this.depth;
         }
         this.calculateScore();
         return n_new_born_child;
     }
     think(remTimeMs = 100,secretMode=false){
-        if(this.iswinGuaranteed() !== undefined){
+        if(this.iswinGuaranteed()){
             return;
         }
         const startTime = Date.now();
@@ -580,28 +606,23 @@ class Node{
             }
         }
         while (Date.now() - startTime < remTimeMs ) {
-            let best_child = null;
-            for(let index = 0; index < this.list.length; index++){
-                let [r,c,child] = this.list[index];
-                if(child === null){
-                    this._think(this.list.length,2);
-                    break;
-                }
-                if(child.searched){
-                    child.calculateScore();
-                    continue;
-                }else if(child.iswinGuaranteed()){
-                    break;
-                }
-                child._think(1);
-                if(best_child === null){
-                    best_child = child;
-                }else if(this.player === AI_CHAR && child.score > best_child.score){
-                    best_child = child;
+            let child = this.get_a_child(true);
+            child._think(8);
+            
+            for(let i = 0;i < this.list.length;i++){
+                let [r,c,_child] = this.list[i];
+                if(_child !== null){
+                    _child._think(1);
+                }else{
+                    _child = this.get_a_child(true);
+                    _child._think(2);
                 }
             }
-            if(best_child !== null){
-                best_child._think(best_child.score > 90 ? 32 : 8);
+            if(this.iswinGuaranteed()){
+                break;
+            }
+            if(child.iswinGuaranteed()){
+                break;
             }
         }
         this.calculateScore();
@@ -635,11 +656,14 @@ class Node{
                         this.score = 10;
                         return true;
                     }
+                }else{
+                    //opponent's turn
+                    if(!result){
+                        allChildrenAreWinGuaranteed = false;
+                    }
                 }
             }else{
-                if(this.player === PLAYER_CHAR && !result){
-                    allChildrenAreWinGuaranteed = false;
-                }
+                allChildrenAreWinGuaranteed = false;
             }
         }
         if(all_null){
@@ -676,7 +700,8 @@ function updateBoard(_instance = new Board()) {
         // higher the value of _instance.render[r][c], redder the text
         const minVal = _instance.render.flat().reduce((a, b) => Math.min(a, b === "" ? Infinity : parseFloat(b)), Infinity);
         const maxVal = _instance.render.flat().reduce((a, b) => Math.max(a, b === "" ? -Infinity : parseFloat(b)), -Infinity);
-        const adjustedScores = _instance.render.map(row => row.map(val => val === "" ? 0 : (val - minVal) / (maxVal - minVal + 0.0001)));
+        const adjustedScores = _instance.render.map(row => row.map(val => val === "" ? 0 
+                            : (isFinite(val) ? (val - minVal) / (maxVal - minVal + 0.0001) : 1 )));
         for(let r=0; r<8; r++){
             for(let c=0; c<8; c++){
                 if(_instance.render[r][c] !== ""){
@@ -762,6 +787,7 @@ function updateBoard(_instance = new Board()) {
     return _instance;
 }
 
+let    DEEPEST_DEPTH = -1;
 function drawCircleAt(r,c, color="yellow",opacity=0.5){
     const board = document.getElementById("board");
     const cell  = document.getElementById(`cell-${r}-${c}`);
