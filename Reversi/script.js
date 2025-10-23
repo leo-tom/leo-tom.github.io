@@ -710,7 +710,7 @@ class Node{
                     if(result){
                         this.winGuaranteed = true;
                         this.searched = true;
-                        this.score = 10;
+                        this.score = 64;
                         return true;
                     }
                 }else{
@@ -1009,7 +1009,7 @@ function frameUpdate(){
                     const [r,c,child] = HEAD.list[index];
                     if(child !== null && child.iswinGuaranteed()){
                         max_index = index;
-                        SCORE = 10;
+                        SCORE = 64;
                         break;
                     }
                 }
@@ -1018,9 +1018,9 @@ function frameUpdate(){
                 SCORE = Number.NEGATIVE_INFINITY;
                 for(index = 0; index < HEAD.list.length; index++){
                     const [r,c,child] = HEAD.list[index];
-                    r_c_score_list.push([r,c,10*child.score]);
+                    r_c_score_list.push([r,c,child.score]);
                     if(child.iswinGuaranteed()){
-                        SCORE = 10.0;
+                        SCORE = 64.0;
                         max_index = index;
                         break;
                     }
@@ -1067,16 +1067,16 @@ function frameUpdate(){
                 SECRET_THINKING = 100;
                 SCORE *= HEAD.depth / 64;
                 if(HEAD.depth > 6){
-                    if(SCORE >= 0.9){
+                    if(SCORE >= 32){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
-                    } else if(SCORE < -0.5){
+                    } else if(SCORE < -32){
                         insertFace("cry");
                         playVoice(VOICE_ID_PUT_CRYING);
-                    } else if(SCORE > 0.5){
+                    } else if(SCORE > 10){
                         insertFace("smile");
                         playVoice(VOICE_ID_PUT_WINNING);
-                    } else if(SCORE < -0.1){
+                    } else if(SCORE < -10){
                         insertFace("confused");
                         playVoice(VOICE_ID_PUT_LOSING);
                     } else {
