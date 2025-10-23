@@ -1031,7 +1031,7 @@ function frameUpdate(){
                 }
             }
             if( ! HEAD.list[max_index][2].searched 
-                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*100 // only deep think when the subtree is small
+                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*50 // only deep think when the subtree is small
                 && DEEP_THINK > 0       // only deep think once per turn
                 && HEAD.depth > 18 // do not deep think in early game
             ){
@@ -1043,7 +1043,7 @@ function frameUpdate(){
                 return;
             }
             //console.log(JSON.parse(JSON.stringify(HEAD)));
-            DEEP_THINK = 0; // reset deep think allowance for next turn
+            DEEP_THINK = 1; // reset deep think allowance for next turn
             const r = HEAD.list[max_index][0];
             const c = HEAD.list[max_index][1];
             currentBoard.put(r, c, AI_CHAR);
