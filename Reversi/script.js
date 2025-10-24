@@ -157,19 +157,6 @@ class Board{
     }
     score(player){
         const opponent = player === 'o' ? '*' : 'o';
-        if(this.isGameOver()){
-        	let result = this.countPieces(player) - this.countPieces(opponent);
-        	if(result > 0){
-        		return 64;
-        	}else if(result < 0){
-        		return -64;
-        	}else{
-        		return -1;
-        	}
-        }
-        let next_move_score = this.calculate_n_next_moves(player) - this.calculate_n_next_moves(opponent);
-        let edge_score = this._calculate_edgeScore(player) - this._calculate_edgeScore(opponent);
-        return 0.1 * next_move_score  + 0.1* edge_score;
         let isGameFinished = true;
         let opponent_n_next_moves_ave = 0;
         let least_opponent_edge_score = 420*420;
@@ -213,11 +200,11 @@ class Board{
         if(isGameFinished){
             const n_opponent_pieces = this.countPieces(opponent);
             if(n_my_pieces > n_opponent_pieces){
-                return 64;
+                return 10;
             }else if(n_my_pieces < n_opponent_pieces){
-                return -64;
+                return -10;
             }else{
-                return -1;
+                return -0.1;
             }
         }
         if(n_next_moves === 0){
@@ -331,7 +318,7 @@ class Node{
                 const newBoard = this.board.duplicate();
                 newBoard.put(r,c,this.player);
                 this.estimated_score[index] = newBoard.score(next_player);
-                this.estimated_score[index] *= this.player === AI_CHAR ? -1 : 1;
+                this.estimated_score[index] *= this.player === AI_CHAR ? 1 : -1;
                 if(isNaN(this.estimated_score[index])){
                     this.board.print2Console();
                     console.log("NaN detected in estimated_score");
@@ -494,9 +481,9 @@ class Node{
         let decisive = this.iswinGuaranteed();
         if(decisive !== undefined){
             if(decisive){
-                return this.score = 64;
+                return this.score = 10;
             }else{
-                return this.score = -64;
+                return this.score = -10;
             }
         }
 
@@ -518,7 +505,7 @@ class Node{
                         likely_to_be_chosen_index = index;
                     }
                 }
-                this.score += this.estimated_score[index] / this.list.length;
+                //this.score += this.estimated_score[index] / this.list.length;
             }
         }else{
             for(let index = 0; index < this.list.length; index++){
@@ -540,14 +527,7 @@ class Node{
                     //this.score += child.score * child.n_descendant / this.n_descendant;
                 }
             }
-            for(let index = 0; index < this.list.length; index++){
-                let [r,c,child] = this.list[index];
-                if(child){
-                	this.score += child.score * child.n_descendant / this.n_descendant;
-                }
-            }
         }
-        return this.score;
         // assign child's score
         this.score = likely_to_be_chosen;// + this.board.score(AI_CHAR);
         //if(this.score > 1){
@@ -710,7 +690,7 @@ class Node{
                     if(result){
                         this.winGuaranteed = true;
                         this.searched = true;
-                        this.score = 64;
+                        this.score = 10;
                         return true;
                     }
                 }else{
@@ -959,7 +939,7 @@ let DEEP_THINK = 1;
 let SECRET_THINKING = DIFFICULTY_CONST * 100; // 20 * DIFFICULTY_CONST * 100 = DIFFICULTY_CONST s of secret thinking
 let lastTimestamp = null;
 
-let DEEPEST_DEPTH = 0;
+let DEEPEST_DEPTH = -1;
 
 function frameUpdate(){
     if(CALL_ENDGAME){
@@ -1009,7 +989,7 @@ function frameUpdate(){
                     const [r,c,child] = HEAD.list[index];
                     if(child !== null && child.iswinGuaranteed()){
                         max_index = index;
-                        SCORE = 64;
+                        SCORE = 10;
                         break;
                     }
                 }
@@ -1018,9 +998,9 @@ function frameUpdate(){
                 SCORE = Number.NEGATIVE_INFINITY;
                 for(index = 0; index < HEAD.list.length; index++){
                     const [r,c,child] = HEAD.list[index];
-                    r_c_score_list.push([r,c,child.score]);
+                    r_c_score_list.push([r,c,10*child.score]);
                     if(child.iswinGuaranteed()){
-                        SCORE = 64.0;
+                        SCORE = 10.0;
                         max_index = index;
                         break;
                     }
@@ -1031,7 +1011,7 @@ function frameUpdate(){
                 }
             }
             if( ! HEAD.list[max_index][2].searched 
-                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*50 // only deep think when the subtree is small
+                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*100 // only deep think when the subtree is small
                 && DEEP_THINK > 0       // only deep think once per turn
                 && HEAD.depth > 18 // do not deep think in early game
             ){
@@ -1067,16 +1047,16 @@ function frameUpdate(){
                 SECRET_THINKING = 100;
                 SCORE *= HEAD.depth / 64;
                 if(HEAD.depth > 6){
-                    if(SCORE >= 32){
+                    if(SCORE >= 0.9){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
-                    } else if(SCORE < -32){
+                    } else if(SCORE < -0.5){
                         insertFace("cry");
                         playVoice(VOICE_ID_PUT_CRYING);
-                    } else if(SCORE > 10){
+                    } else if(SCORE > 0.5){
                         insertFace("smile");
                         playVoice(VOICE_ID_PUT_WINNING);
-                    } else if(SCORE < -10){
+                    } else if(SCORE < -0.1){
                         insertFace("confused");
                         playVoice(VOICE_ID_PUT_LOSING);
                     } else {
