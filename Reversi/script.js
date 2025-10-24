@@ -157,6 +157,19 @@ class Board{
     }
     score(player){
         const opponent = player === 'o' ? '*' : 'o';
+        if(this.isGameOver()){
+        	let result = this.countPieces(player) - this.countPieces(opponent);
+        	if(result > 0){
+        		return 64;
+        	}else if(result < 0){
+        		return -64;
+        	}else{
+        		return -1;
+        	}
+        }
+        let next_move_score = this.calculate_n_next_moves(player) - this.calculate_n_next_moves(opponent);
+        let edge_score = this._calculate_edgeScore(player) - this._calculate_edgeScore(opponent);
+        return (0.2*next_move_score  + 0.8* edge_score)/2;
         let isGameFinished = true;
         let opponent_n_next_moves_ave = 0;
         let least_opponent_edge_score = 420*420;
@@ -200,11 +213,11 @@ class Board{
         if(isGameFinished){
             const n_opponent_pieces = this.countPieces(opponent);
             if(n_my_pieces > n_opponent_pieces){
-                return 10;
+                return 64;
             }else if(n_my_pieces < n_opponent_pieces){
-                return -10;
+                return -64;
             }else{
-                return -0.1;
+                return -1;
             }
         }
         if(n_next_moves === 0){
@@ -318,7 +331,7 @@ class Node{
                 const newBoard = this.board.duplicate();
                 newBoard.put(r,c,this.player);
                 this.estimated_score[index] = newBoard.score(next_player);
-                this.estimated_score[index] *= this.player === AI_CHAR ? 1 : -1;
+                this.estimated_score[index] *= this.player === AI_CHAR ? -1 : 1;
                 if(isNaN(this.estimated_score[index])){
                     this.board.print2Console();
                     console.log("NaN detected in estimated_score");
@@ -464,6 +477,7 @@ class Node{
                 }else{
                     child = new Node(newBoard, this.player,this.depth + 1);
                 }
+                child.self_score = this.estimated_score[chosen_index];
                 this.list[chosen_index][2] = child;
                 child.newBorn = true;
                 return child;
@@ -481,9 +495,9 @@ class Node{
         let decisive = this.iswinGuaranteed();
         if(decisive !== undefined){
             if(decisive){
-                return this.score = 10;
+                return this.score = 64;
             }else{
-                return this.score = -10;
+                return this.score = -64;
             }
         }
 
@@ -505,14 +519,16 @@ class Node{
                         likely_to_be_chosen_index = index;
                     }
                 }
-                //this.score += this.estimated_score[index] / this.list.length;
+                //this.score += this.estimated_score[index];
             }
+            this.score = likely_to_be_chosen;
         }else{
+            let cnt =0;
             for(let index = 0; index < this.list.length; index++){
                 let [r,c,child] = this.list[index];
                 if(child){
                     this.n_descendant += child.n_descendant;
-                    // minimax
+                    cnt += 1;
                     if(this.player === AI_CHAR){
                         if(child.score > likely_to_be_chosen){
                             likely_to_be_chosen = child.score;
@@ -527,7 +543,12 @@ class Node{
                     //this.score += child.score * child.n_descendant / this.n_descendant;
                 }
             }
+            this.score = likely_to_be_chosen;
+            const factor = this.list[likely_to_be_chosen_index][2].n_descendant / this.n_descendant;
+            //return this.score;
+            this.score = (1 - factor) * likely_to_be_chosen + factor * this.self_score;
         }
+        return this.score;
         // assign child's score
         this.score = likely_to_be_chosen;// + this.board.score(AI_CHAR);
         //if(this.score > 1){
@@ -549,29 +570,41 @@ class Node{
         let n_new_born_child = 0;
         if(all_search_depth > 0){
             number_of_new_born -= n_null_children;
-            const number_of_new_born_for_children = n_null_children !== 0 ? Math.floor(number_of_new_born / n_null_children) : Math.floor(number_of_new_born/this.list.length);
-            while(n_null_children > 0){
-                let a_child = this.get_a_child(true);
-                if(a_child === null){
-                    //already fully searched
-                    return n_new_born_child;
+            const number_of_new_born_for_children = n_null_children !== 0 ? Math.floor(number_of_new_born / n_null_children) : number_of_new_born;
+            if(n_null_children > 0){
+                while(n_null_children > 0){
+                    let a_child = this.get_a_child(true);
+                    if(a_child === null){
+                        //already fully searched
+                        this.calculateScore();
+                        console.log("here");
+                        return n_new_born_child;
+                    }
+                    n_new_born_child += 1;
+                    if(a_child.gameFinished === 0){
+                        // game is not finished, think further
+                        n_new_born_child += a_child._think(number_of_new_born_for_children,all_search_depth - 1);
+                    }
+                    n_null_children -= 1;
                 }
-                n_new_born_child += 1;
-                if(a_child.gameFinished === 0){
-                    // game is not finished, think further
-                    n_new_born_child += a_child._think(number_of_new_born_for_children,all_search_depth - 1);
+            }else{
+                //if(!a_child.searched){
+                //    n_new_born_child += a_child._think(number_of_new_born_for_children/2,all_search_depth - 1);
+                //}
+                let a_child = this.list[Math.floor(Math.random() * this.list.length)][2];
+                if(!a_child.searched){
+                    n_new_born_child += a_child._think(number_of_new_born_for_children/2,all_search_depth - 1);
                 }
-                n_null_children -= 1;
             }
         }else{
             while(n_new_born_child < number_of_new_born){
                 //let chosen_child = Math.random() < 1/3 ? this.get_a_child() : this.minimaxSelect();
-                let chosen_child = null;
-                if(this.player === AI_CHAR){
-                    chosen_child = Math.random() < 8/10 ? this.get_a_child(true) : this.minimaxSelect();
-                }else{
-                    chosen_child = Math.random() < 8/10 ? this.get_a_child(true)  : this.minimaxSelect();
-                }
+                let chosen_child = Math.random() < 9/10 ? this.get_a_child(true) : this.list[Math.floor(Math.random() * this.list.length)][2];
+                //if(this.player === AI_CHAR){
+                //    chosen_child = Math.random() < 7/10 ? this.get_a_child(true) : this.minimaxSelect();
+                //}else{
+                //    chosen_child = Math.random() < 9/10 ? this.get_a_child(true)  : this.minimaxSelect();
+                //}
                 
                 if(chosen_child === null){
                     this.calculateScore();
@@ -632,36 +665,26 @@ class Node{
                 }
             }
             while (Date.now() - startTime < remTimeMs) {
-                child._think(16);
+                child._think(16,6);
             }
         }
         while (Date.now() - startTime < remTimeMs ) {
-            let child = this.get_a_child(true);
-            if(child !== null){
-                child._think(4);
-            }else{
-            	this.calculateScore();
-            	if(this.searched){
-            		return;
-            	}
-                console.log("No child to think in main think()");
-                console.log(this);
-                alert("Error: No child to think in main think()");
-                break;
-            }
-            
             for(let i = 0;i < this.list.length;i++){
                 let [r,c,_child] = this.list[i];
                 if(_child !== null){
-                    _child._think(1);
+                    _child._think(16,6);
                 }else{
                     _child = this.get_a_child(true);
-                    _child._think(2);
+                    _child._think(16,6);
                 }
+            }
+            let child = this.get_a_child(true);
+            if(child !== null){
+                child._think(16,6);
             }
             if(this.iswinGuaranteed()){
                 break;
-            }
+            }           
         }
         this.calculateScore();
     }
@@ -690,7 +713,7 @@ class Node{
                     if(result){
                         this.winGuaranteed = true;
                         this.searched = true;
-                        this.score = 10;
+                        this.score = 64;
                         return true;
                     }
                 }else{
@@ -747,7 +770,7 @@ function updateBoard(_instance = new Board()) {
                     }else if(_instance.render[r][c] === "-∞" ){
                         red_weight[r][c] = 0;
                     }else{
-                        red_weight[r][c] = Math.floor(255 * adjustedScores[r][c]);
+                        red_weight[r][c] = Math.floor(255 * Math.pow(adjustedScores[r][c],4.2));
                     }
                     
                 }
@@ -867,7 +890,7 @@ function renderInsideInfo(){
     
     if(HEAD.score || HEAD.depth === 4){
         let progressBar = document.getElementById("progressBar");
-        let RATE = HEAD.depth === 4 ? 0.5 : HEAD.score * 0.5 + 0.5;
+        let RATE = HEAD.depth === 4 ? 0.5 : HEAD.score * 0.05 + 0.5;
         RATE = Math.min(Math.max(RATE, 0), 1);
         let box = document.createElement("div");
         box.style.width = `${(1-RATE) * 100}%`;
@@ -935,11 +958,11 @@ let AI_THINKING = false;
 let PLAYER_TIME = 20 * 1000 * 60;
 let AI_TIME     = 20 * 1000 * 60;
 let AI_TIME_LIMIT = DIFFICULTY_CONST * 1000 / 2;
-let DEEP_THINK = 1;
-let SECRET_THINKING = DIFFICULTY_CONST * 100; // 20 * DIFFICULTY_CONST * 100 = DIFFICULTY_CONST s of secret thinking
+let DEEP_THINK = 5;
+let SECRET_THINKING = 2* DIFFICULTY_CONST * 20; // 2 * DIFFICULTY_CONST * 100 = 2*DIFFICULTY_CONST s of secret thinking
 let lastTimestamp = null;
 
-let DEEPEST_DEPTH = -1;
+let DEEPEST_DEPTH = 0;
 
 function frameUpdate(){
     if(CALL_ENDGAME){
@@ -958,7 +981,7 @@ function frameUpdate(){
                     r_c_score_list.push([r,c,Number.POSITIVE_INFINITY]);
                     AI_TIME_LIMIT = 0; // stop thinking
                 }else{
-                    r_c_score_list.push([r,c,10*child.score]);
+                    r_c_score_list.push([r,c,child.score]);
                 }
                 
             }
@@ -989,7 +1012,7 @@ function frameUpdate(){
                     const [r,c,child] = HEAD.list[index];
                     if(child !== null && child.iswinGuaranteed()){
                         max_index = index;
-                        SCORE = 10;
+                        SCORE = 64;
                         break;
                     }
                 }
@@ -998,9 +1021,9 @@ function frameUpdate(){
                 SCORE = Number.NEGATIVE_INFINITY;
                 for(index = 0; index < HEAD.list.length; index++){
                     const [r,c,child] = HEAD.list[index];
-                    r_c_score_list.push([r,c,10*child.score]);
+                    r_c_score_list.push([r,c,child.score]);
                     if(child.iswinGuaranteed()){
-                        SCORE = 10.0;
+                        SCORE = 64.0;
                         max_index = index;
                         break;
                     }
@@ -1011,13 +1034,13 @@ function frameUpdate(){
                 }
             }
             if( ! HEAD.list[max_index][2].searched 
-                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*100 // only deep think when the subtree is small
+                && HEAD.list[max_index][2].n_descendant <= DIFFICULTY_CONST*200 // only deep think when the subtree is small
                 && DEEP_THINK > 0       // only deep think once per turn
-                && HEAD.depth > 18 // do not deep think in early game
+                && HEAD.depth > 12 // do not deep think in early game
             ){
                 // continue thinking. This is allowed only once per turn.
                 AI_THINKING = true;
-                AI_TIME_LIMIT = DIFFICULTY_CONST * 1000;
+                AI_TIME_LIMIT = 1.5*DIFFICULTY_CONST * 1000;
                 playVoice(VOICE_ID_THINKING);
                 DEEP_THINK -= 1;
                 return;
@@ -1045,18 +1068,18 @@ function frameUpdate(){
                 //HEAD.board.print2Console();
                 currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
                 SECRET_THINKING = 100;
-                SCORE *= HEAD.depth / 64;
+                //SCORE *= HEAD.depth / 64;
                 if(HEAD.depth > 6){
-                    if(SCORE >= 0.9){
+                    if(SCORE >= 10){
                         insertFace("laugh");
                         playVoice(VOICE_ID_PUT_LAUGHING);
-                    } else if(SCORE < -0.5){
+                    } else if(SCORE < -10){
                         insertFace("cry");
                         playVoice(VOICE_ID_PUT_CRYING);
-                    } else if(SCORE > 0.5){
+                    } else if(SCORE > 1){
                         insertFace("smile");
                         playVoice(VOICE_ID_PUT_WINNING);
-                    } else if(SCORE < -0.1){
+                    } else if(SCORE < -1){
                         insertFace("confused");
                         playVoice(VOICE_ID_PUT_LOSING);
                     } else {
@@ -1085,8 +1108,8 @@ function frameUpdate(){
             return;
         }
         // secretly let AI think in the background
-        if(SECRET_THINKING > 0 && currentTimestamp % 2 === 0){
-            HEAD.think(20, true);
+        if(SECRET_THINKING > 0){
+            HEAD.think(50, true);
             //HEAD.calculateScore();
             console.log("secretly thinking...");
             SECRET_THINKING -= 1;
@@ -1191,11 +1214,11 @@ function startGame(playerChar){
         AI_THINKING = true;
     }else{
         currentBoard.setList(HEAD.getList(), PLAYER_CHAR, false);
-        HEAD.think(10,true);
+        HEAD.think(50,true);
     }
     currentBoard = updateBoard(currentBoard);
     renderInsideInfo();
-    DEEPEST_DEPTH = -1;
+    DEEPEST_DEPTH = 1;
 }
 
 window.onload = function() {
