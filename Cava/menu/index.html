@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="lang-en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu - Saba Lab.</title>
+  <link rel="stylesheet" href="stylesheet.css">
+</head>
+<body>
+  <main class="menu-container">
+
+    <!--
+    <div class="menu-topbar">
+      <p class="menu-label">
+        <span class="en-main">Saba Lab. Seasonal Menu</span>
+        <span class="ja-main">佐波研究室 季節メニュー</span>
+      </p>
+      <div class="lang-toggle-container">
+        <button class="lang-btn active" id="btn-en" onclick="setLanguage('en')" aria-pressed="true">English</button>
+        <button class="lang-btn" id="btn-ja" onclick="setLanguage('ja')" aria-pressed="false">日本語</button>
+      </div>
+    </div>
+-->
+
+    <!-- FOOD SECTION -->
+    <h2 class="section-title">
+      <span class="en-main">Food</span>
+      <span class="ja-main">食品</span>
+    </h2>
+    <div class="grid food-grid">
+
+      <!-- パニ・プリ (SOLD OUTにしたい場合は class="menu-card sold-out" にする) -->
+      <div class="feature-item">
+        <div class="menu-card" id="item-panipuri">
+          <div class="sold-out-badge">SOLD OUT</div>
+          <div>
+            <div class="card-header">
+              <h3 class="item-name">
+                <span class="en-main">① Pani Puri</span>
+                <span class="ja-main">パニ・プリ</span>
+              </h3>
+              <p class="item-price">500 yen</p>
+            </div>
+            <p class="ja-sub">パニ・プリ</p>
+            <p class="item-desc">
+              <span class="en-main">Crispy fried shells filled with spiced potato stuffing and tangy tamarind water.</span>
+              <span class="ja-main">揚げたての殻にスパイシーなポテトを詰め、甘酸っぱいタマリンド水で食べる人気スナック。</span>
+            </p>
+            <p class="ja-sub">揚げたての殻にスパイシーなポテトを詰め、甘酸っぱいタマリンド水で食べる人気スナック。</p>
+            <div class="origin-note food-origin">
+              <img src="figure/india.svg" alt="India flag" class="flag-icon">
+              <span class="en-main">India</span>
+              <span class="ja-main">インド</span>
+            </div>
+          </div>
+          <div class="ingredients-tag">
+            <span class="en-main">Vegan / Potato, Masala, Tamarind</span>
+            <span class="ja-main">ヴィーガン仕様 / マッシュポテト・マサラ・タマリンド</span>
+            <span class="ja-sub">ヴィーガン仕様 / マッシュポテト・マサラ・タマリンド</span>
+          </div>
+        </div>
+        <figure class="panipuri-side-figure">
+          <img src="figure/panipuri-small.png" alt="Pani Puri" class="panipuri-side-image">
+        </figure>
+      </div>
+
+    </div>
+
+    <!-- DRINKS SECTION -->
+    <h2 class="section-title">
+      <span class="en-main">Drinks</span>
+      <span class="ja-main">飲料</span>
+    </h2>
+    <div class="grid">
+
+
+      <!-- チャイ -->
+      <div class="menu-card" id="item-chai">
+        <div class="sold-out-badge">SOLD OUT</div>
+        <div class="item-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 80" role="presentation">
+            <!-- チャイグラス -->
+            <path d="M44 28 h32 l-4 34 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"></path>
+            <path d="M52 36 v22 M60 36 v22 M68 36 v20"></path>
+            <!-- シナモンスティック -->
+            <path d="M65 38 l15 -22 a2 2 0 0 0 -3 -2 l-14 22"></path>
+            <!-- 湯気 -->
+            <path d="M49 20 q4 -5 0 -9"></path>
+            <path d="M57 18 q4 -5 0 -9"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header">
+            <h3 class="item-name">
+              <span class="en-main">② Chai</span>
+              <span class="ja-main">チャイ</span>
+            </h3>
+            <p class="item-price">500 yen</p>
+          </div>
+          <p class="ja-sub">チャイ</p>
+          <p class="item-desc">
+            <span class="en-main">Rich Indian spiced tea brewed with Assam leaves and oat milk.</span>
+            <span class="ja-main">アッサム茶葉とティーマサラをオーツミルクで優しく煮出した本格スパイスティー。</span>
+          </p>
+          <p class="ja-sub">アッサム茶葉とティーマサラをオーツミルクで優しく煮出した本格スパイスティー。</p>
+          <div class="origin-note">
+            <img src="figure/india.svg" alt="India flag" class="flag-icon">
+            <span class="en-main">India</span>
+            <span class="ja-main">インド</span>
+            <span class="ja-sub">インド</span>
+          </div>
+        </div>
+        <div class="ingredients-tag">
+          <span class="en-main">Assam Tea, Oat Milk, Spices</span>
+          <span class="ja-main">アッサム茶・オーツミルク・ティーマサラ</span>
+          <span class="ja-sub">アッサム茶・オーツミルク・ティーマサラ</span>
+        </div>
+      </div>
+
+
+      <!-- アーモンド・カフェ -->
+      <div class="menu-card" id="item-cafeamande">
+        <div class="sold-out-badge">SOLD OUT</div>
+        <div class="item-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 80" role="presentation">
+            <!-- マキネッタ（蓋・ノブ） -->
+            <path d="M58 14 h4 v3 h-4 z"></path>
+            <path d="M46 22 l14 -5 l14 5"></path>
+            <!-- 上部サーバー & 注ぎ口 -->
+            <path d="M46 22 l-4 18 h36 l-4 -18 z"></path>
+            <path d="M42 24 l-7 5 l7 5"></path>
+            <!-- ハンドル -->
+            <path d="M74 26 h10 v20 h-9"></path>
+            <!-- 中央ウエストリング -->
+            <path d="M41 40 h38"></path>
+            <!-- 下部ボトムタンク -->
+            <path d="M44 40 l4 23 h24 l4 -23 z"></path>
+            <!-- アロマ・湯気 -->
+            <path d="M55 11 q3 -4 0 -7"></path>
+            <path d="M64 11 q3 -4 0 -7"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header">
+            <h3 class="item-name">
+              <span class="en-main">③ Cafe Amande</span>
+              <span class="ja-main">アーモンド・カフェ</span>
+            </h3>
+            <p class="item-price">700 yen</p>
+          </div>
+          <p class="ja-sub">アーモンド・カフェ</p>
+          <p class="item-desc">
+            <span class="en-main">Rich Moka pot espresso blended with sweet almond syrup and oat milk.</span>
+            <span class="ja-main">直火式マキネッタで淹れた極上エスプレッソと香ばしいアーモンドシロップの組み合わせ。</span>
+          </p>
+          <p class="ja-sub">直火式マキネッタで淹れた極上エスプレッソと香ばしいアーモンドシロップの組み合わせ。</p>
+          <div class="origin-note">
+            <img src="figure/france.svg" alt="France flag" class="flag-icon">
+            <span class="en-main">France</span>
+            <span class="ja-main">フランス</span>
+            <span class="ja-sub">フランス</span>
+          </div>
+        </div>
+        <div class="ingredients-tag">
+          <span class="en-main">Espresso, Almond Syrup, Oat Milk</span>
+          <span class="ja-main">エスプレッソ・アーモンドシロップ・オーツミルク</span>
+          <span class="ja-sub">エスプレッソ・アーモンドシロップ・オーツミルク</span>
+        </div>
+      </div>
+
+      <!-- スージャ -->
+      <div class="menu-card" id="item-suja">
+        <div class="sold-out-badge">SOLD OUT</div>
+        <div class="item-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 80" role="presentation">
+            <!-- 伝統的なチベット風木製茶碗と高台 -->
+            <path d="M34 38 q26 32 52 0 z"></path>
+            <path d="M32 38 h56"></path>
+            <path d="M48 57 v8 h24 v-8"></path>
+            <!-- バターのブロック -->
+            <polygon points="54,33 62,33 64,37 56,37"></polygon>
+            <!-- 湯気 -->
+            <path d="M46 28 q4 -6 0 -11"></path>
+            <path d="M60 26 q4 -6 0 -11"></path>
+            <path d="M74 28 q4 -6 0 -11"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header">
+            <h3 class="item-name">
+              <span class="en-main">④ Suja</span>
+              <span class="ja-main">スージャ</span>
+            </h3>
+            <p class="item-price">500 yen</p>
+          </div>
+          <p class="ja-sub">スージャ</p>
+          <p class="item-desc">
+            <span class="en-main">Traditional Bhutanese savory butter tea made with vegan ghee and a hint of salt.</span>
+            <span class="ja-main">アッサム茶に塩とヴィーガンギーを効かせた、コクのあるブータン風バターティー。</span>
+          </p>
+          <p class="ja-sub">アッサム茶に塩とヴィーガンギーを効かせた、コクのあるブータン風バターティー。</p>
+          <div class="origin-note">
+            <img src="figure/bhutan.svg" alt="Bhutan flag" class="flag-icon">
+            <span class="en-main">Bhutan</span>
+            <span class="ja-main">ブータン</span>
+            <span class="ja-sub">ブータン</span>
+          </div>
+        </div>
+        <div class="ingredients-tag">
+          <span class="en-main">Assam Tea, Vegan Ghee, Salt, Oat Milk</span>
+          <span class="ja-main">アッサム茶・ヴィーガンギー・塩・オーツミルク</span>
+          <span class="ja-sub">アッサム茶・ヴィーガンギー・塩・オーツミルク</span>
+        </div>
+      </div>
+
+      <!-- ルーアフザ -->
+      <div class="menu-card" id="item-roohafza">
+        <div class="sold-out-badge">SOLD OUT</div>
+        <div class="item-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 80" role="presentation">
+            <path d="M46 16 h28 l-4 42 h-20 z"></path>
+            <path d="M42 58 h36"></path>
+            <circle cx="58" cy="33" r="3"></circle>
+            <circle cx="64" cy="40" r="2.5"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header">
+            <h3 class="item-name">
+              <span class="en-main">⑤ Rooh Afza</span>
+              <span class="ja-main">ルーアフザ</span>
+            </h3>
+            <p class="item-price">300 yen</p>
+          </div>
+          <p class="ja-sub">ルーアフザ</p>
+          <p class="item-desc">
+            <span class="en-main">Refreshing and aromatic herbal drink with fruit and floral syrup.</span>
+            <span class="ja-main">ハーブやフルーツ、花のエキスが香る爽やかで華やかなシロップドリンク。</span>
+          </p>
+          <p class="ja-sub">ハーブやフルーツ、花のエキスが香る爽やかで華やかなシロップドリンク。</p>
+          <div class="origin-note">
+            <img src="figure/bangladesh.svg" alt="Bangladesh flag" class="flag-icon">
+            <span class="en-main">Bangladesh</span>
+            <span class="ja-main">バングラディッシュ</span>
+            <span class="ja-sub">バングラディッシュ</span>
+          </div>
+        </div>
+        <div class="ingredients-tag">
+          <span class="en-main">Rooh Afza Syrup, Water</span>
+          <span class="ja-main">ルーアフザシロップ・水</span>
+          <span class="ja-sub">ルーアフザシロップ・水</span>
+        </div>
+      </div>
+
+
+      <!-- とうもろこしひげ茶 -->
+      <div class="menu-card" id="item-cornsilktea">
+        <div class="sold-out-badge">SOLD OUT</div>
+        <div class="item-illustration" aria-hidden="true">
+          <svg viewBox="0 0 120 80" role="presentation">
+            <!-- とうもろこし本体 & 実 -->
+            <path d="M52 32 c0 -14 16 -14 16 0 v22 c0 6 -7 9 -8 9 c-1 0 -8 -3 -8 -9 z"></path>
+            <path d="M60 22 v38"></path>
+            <!-- 葉（皮） -->
+            <path d="M44 63 q8 -18 8 -30"></path>
+            <path d="M76 63 q-8 -18 -8 -30"></path>
+            <path d="M60 63 v5"></path>
+            <!-- ひげ（シルク） -->
+            <path d="M55 21 q-4 -7 -9 -9"></path>
+            <path d="M59 20 q0 -8 -4 -11"></path>
+            <path d="M62 20 q3 -7 7 -10"></path>
+            <path d="M65 22 q6 -5 10 -6"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="card-header">
+            <h3 class="item-name">
+              <span class="en-main">⑥ Corn Silk Tea</span>
+              <span class="ja-main">とうもろこしひげ茶</span>
+            </h3>
+            <p class="item-price">300 yen</p>
+          </div>
+          <p class="ja-sub">とうもろこしひげ茶</p>
+          <p class="item-desc">
+            <span class="en-main">Gentle, naturally sweet roasted corn silk tea. Caffeine-free.</span>
+            <span class="ja-main">香ばしさとほのかな甘みが広がるヘルシーな茶。ノンカフェイン。</span>
+          </p>
+          <p class="ja-sub">香ばしさとほのかな甘みが広がるヘルシーな茶。ノンカフェイン。</p>
+          <div class="origin-note">
+            <img src="figure/korea.svg" alt="Korea flag" class="flag-icon">
+            <span class="en-main">Korea</span>
+            <span class="ja-main">韓国</span>
+            <span class="ja-sub">韓国</span>
+          </div>
+        </div>
+        <div class="ingredients-tag">
+          <span class="en-main">Corn Silk Tea</span>
+          <span class="ja-main">とうもろこしひげ茶</span>
+          <span class="ja-sub">とうもろこしひげ茶</span>
+        </div>
+      </div>
+
+
+    </div>
+  </main>
+
+  <script>
+    // 言語切り替え処理
+    function setLanguage(lang) {
+      const htmlEl = document.documentElement;
+      const btnEn = document.getElementById('btn-en');
+      const btnJa = document.getElementById('btn-ja');
+
+      if (lang === 'ja') {
+        htmlEl.className = 'lang-ja';
+        btnJa.classList.add('active');
+        btnEn.classList.remove('active');
+        btnJa.setAttribute('aria-pressed', 'true');
+        btnEn.setAttribute('aria-pressed', 'false');
+      } else {
+        htmlEl.className = 'lang-en';
+        btnEn.classList.add('active');
+        btnJa.classList.remove('active');
+        btnEn.setAttribute('aria-pressed', 'true');
+        btnJa.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    // SOLD OUT トグル処理 (管理者用)
+    function toggleSoldOut(itemId) {
+      const item = document.getElementById(itemId);
+      if (item) {
+        item.classList.toggle('sold-out');
+      }
+    }
+  </script>
+</body>
+</html>

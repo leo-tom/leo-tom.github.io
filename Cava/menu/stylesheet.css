@@ -1,0 +1,335 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+:root {
+  --ink: #39261a;
+  --ink-soft: #6f5646;
+  --leaf: #a34a1e;
+  --leaf-deep: #7b2f14;
+  --amber: #e3a03f;
+  --cream: #fff8ea;
+  --mist: #f5e9d4;
+  --card: #fffdf7;
+  --border: #e4d3b7;
+  --soldout: #a91d14;
+  --shadow: 0 14px 30px rgba(76, 36, 17, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(227, 160, 63, 0.25), transparent 34%),
+    radial-gradient(circle at 95% 10%, rgba(163, 74, 30, 0.17), transparent 36%),
+    linear-gradient(140deg, var(--cream), var(--mist));
+  line-height: 1.65;
+  min-height: 100vh;
+  padding: 10px 10px 18px;
+}
+
+.lang-en .ja-main {
+  display: none !important;
+}
+
+.lang-ja .en-main,
+.lang-ja .ja-sub {
+  display: none !important;
+}
+
+.menu-topbar {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  background: rgba(255, 248, 231, 0.88);
+}
+
+.menu-label {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--leaf-deep);
+  font-size: clamp(1.1rem, 2.4vw, 1.45rem);
+  letter-spacing: 0.4px;
+}
+
+.lang-toggle-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(227, 160, 63, 0.16);
+}
+
+.lang-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--leaf-deep);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.lang-btn:hover {
+  transform: translateY(-1px);
+}
+
+.lang-btn.active {
+  color: #fffef9;
+  background: linear-gradient(125deg, var(--leaf), var(--leaf-deep));
+}
+
+.menu-container {
+  width: 100%;
+  margin: 0;
+}
+
+.section-title {
+  margin: 12px 0 8px;
+  padding-bottom: 5px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.3rem, 2.5vw, 1.72rem);
+  letter-spacing: 0.8px;
+  border-bottom: 2px solid rgba(123, 47, 20, 0.35);
+  color: var(--leaf-deep);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.food-grid {
+  grid-template-columns: 1fr;
+}
+
+.feature-item {
+  display: grid;
+  grid-template-columns: minmax(260px, 430px) minmax(220px, 320px);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  max-width: 100%;
+}
+
+.menu-card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, var(--card) 0%, #fff7eb 100%);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+
+.menu-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(163, 74, 30, 0.1), transparent 38%);
+  pointer-events: none;
+}
+
+.menu-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(80, 40, 20, 0.2);
+}
+
+.item-illustration {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.item-illustration svg {
+  width: 78px;
+  height: 56px;
+  stroke: var(--leaf);
+  fill: rgba(227, 160, 63, 0.2);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.panipuri-side-figure {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.panipuri-side-image {
+  width: auto;
+  height: 100%;
+  max-height: 320px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 0;
+  border: none;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.item-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.34rem;
+  line-height: 1.2;
+  color: var(--leaf-deep);
+}
+
+.item-price {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(125deg, var(--leaf), var(--leaf-deep));
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.ja-sub {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.item-desc {
+  margin-top: 4px;
+  font-size: 0.84rem;
+  color: var(--ink);
+}
+
+.origin-note {
+  margin-top: 5px;
+  font-size: 0.76rem;
+  color: var(--leaf);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flag-icon {
+  width: 18px;
+  height: 12px;
+  border: 1px solid rgba(123, 47, 20, 0.24);
+  border-radius: 2px;
+  background: #fff;
+}
+
+.food-origin {
+  color: #8f603a;
+}
+
+.ingredients-tag {
+  font-size: 0.72rem;
+  color: #614a3b;
+  background: rgba(227, 160, 63, 0.18);
+  border: 1px solid rgba(163, 74, 30, 0.2);
+  border-radius: 10px;
+  padding: 6px 9px;
+}
+
+.sold-out-badge {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: -32px;
+  z-index: 3;
+  background: var(--soldout);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 30px;
+  transform: rotate(40deg);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.menu-card.sold-out {
+  opacity: 0.62;
+}
+
+.menu-card.sold-out .sold-out-badge {
+  display: block;
+}
+
+@media (max-width: 680px) {
+  body {
+    padding: 8px 8px 12px;
+  }
+
+  .menu-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .grid {
+    gap: 8px;
+  }
+
+  .food-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-item {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .menu-card {
+    padding: 11px;
+  }
+
+  .item-name {
+    font-size: 1.2rem;
+  }
+
+  .item-illustration svg {
+    width: 70px;
+    height: 50px;
+  }
+
+  .panipuri-side-figure {
+    width: 100%;
+    max-width: 420px;
+    justify-self: center;
+  }
+
+  .panipuri-side-image {
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+}
