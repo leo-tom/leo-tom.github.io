@@ -95,6 +95,104 @@ body {
   margin: 0;
 }
 
+.brand-hero {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(210px, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(227, 160, 63, 0.24), transparent 36%),
+    linear-gradient(145deg, #fff9ef 0%, #f7e8d1 55%, #f3debe 100%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.brand-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -20px -26px auto;
+  width: 170px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(123, 47, 20, 0.14), transparent 65%);
+  pointer-events: none;
+}
+
+.brand-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.brand-kicker {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--leaf);
+  margin-bottom: 4px;
+}
+
+.brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: 0.4px;
+  color: var(--leaf-deep);
+  margin-bottom: 6px;
+}
+
+.brand-accent {
+  font-size: clamp(1.05rem, 3vw, 1.4rem);
+  color: var(--ink-soft);
+}
+
+.brand-lead {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.brand-points {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.brand-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--ink);
+}
+
+.brand-points li::before {
+  content: '◆';
+  font-size: 0.72rem;
+  color: var(--leaf);
+  line-height: 1.6;
+  margin-top: 1px;
+}
+
+.brand-logo-wrap {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.brand-logo {
+  width: min(100%, 430px);
+  max-height: 260px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(72, 36, 16, 0.2));
+  transform: scale(1.02);
+}
+
 .section-title {
   margin: 12px 0 8px;
   padding-bottom: 5px;
@@ -286,6 +384,25 @@ body {
 @media (max-width: 680px) {
   body {
     padding: 8px 8px 12px;
+  }
+
+  .brand-hero {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 11px;
+  }
+
+  .brand-name {
+    font-size: clamp(1.8rem, 10vw, 2.4rem);
+  }
+
+  .brand-kicker {
+    letter-spacing: 0.9px;
+  }
+
+  .brand-logo {
+    width: min(100%, 340px);
+    max-height: 220px;
   }
 
   .menu-topbar {
