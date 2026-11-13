@@ -215,13 +215,20 @@ body {
 
 .feature-item {
   display: grid;
-  grid-template-columns: minmax(260px, 430px) minmax(220px, 320px);
+  grid-template-columns: minmax(300px, 430px) minmax(520px, 1fr);
   gap: 12px;
   align-items: center;
   width: 100%;
-  max-width: 760px;
+  max-width: 1080px;
   margin-inline: auto;
-  max-width: 100%;
+}
+
+.food-side-column {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(340px, 1.4fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
 }
 
 .menu-card {
@@ -276,16 +283,41 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 220px;
 }
 
 .panipuri-side-image {
-  width: auto;
-  height: 100%;
-  max-height: 320px;
-  max-width: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  max-width: 360px;
   object-fit: contain;
   border-radius: 0;
   border: none;
+}
+
+.set-card {
+  border: 1px solid rgba(163, 74, 30, 0.45);
+  background: linear-gradient(160deg, #fff7e7 0%, #ffeecf 100%);
+  min-height: 220px;
+  width: 100%;
+  justify-self: end;
+}
+
+.set-card .item-price {
+  background: linear-gradient(125deg, #ce5a21, #8f3011);
+}
+
+.recommend-badge {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: #fffdf7;
+  background: linear-gradient(125deg, #d66b2c, #a63d17);
+  border-radius: 999px;
+  padding: 4px 10px;
+  box-shadow: 0 6px 14px rgba(123, 47, 20, 0.22);
 }
 
 .card-header {
@@ -423,6 +455,11 @@ body {
   .feature-item {
     grid-template-columns: 1fr;
     width: 100%;
+  }
+
+  .food-side-column {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .menu-card {
